@@ -24,3 +24,5 @@ console.log
 
 # dev environment configs
 .idea/
+
+dancer-mujocosim/
