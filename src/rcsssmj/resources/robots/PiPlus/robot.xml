@@ -1,5 +1,5 @@
 <mujoco model="pi_plus_24dof_250828">
-  <compiler angle="radian" meshdir="../meshes/"/>
+  <compiler angle="radian" meshdir="meshes/"/>
   <default>
     <default class="leg_motor">
       <joint damping="0.05" armature="0.044277" frictionloss="0.2" />
@@ -10,6 +10,7 @@
 
   </default>
   <asset>
+    <material name="team" rgba="0.4 0.4 0.4 1"/>
     <mesh name="base_link" file="base_link.STL"/>
     <mesh name="l_hip_pitch_link" file="l_hip_pitch_link.STL"/>
     <mesh name="l_hip_roll_link" file="l_hip_roll_link.STL"/>
@@ -45,12 +46,12 @@
   </asset>
 
   <worldbody>
-    <body name="base_link" pos="0 0 0.39">
+    <body name="torso" pos="0 0 0.39">
       <site name="imu" size="0.01" pos="-0.0 -0.0 0.0" />
 
 
       <inertial pos="0.00504177 -0.000223877 0.0965201" quat="0.999242 0.00281629 0.0376757 0.0093836" mass="3.45126" diaginertia="0.046034 0.0431943 0.00969223"/>
-      <joint name="floating_base_joint" type="free" limited="false" actuatorfrclimited="false" class="leg_motor"/>
+      <freejoint name="root"/>
       <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.75294 0.75294 0.75294 1" mesh="base_link"/>
       <geom size="0.077 0.065 0.07" pos="0 0 0.07" type="box" rgba="0.75294 0.75294 0.75294 1"/>
       <geom size="0.0175 0.0175 0.037" pos="0 0 0.16" type="box" rgba="0.75294 0.75294 0.75294 1"/>
@@ -211,22 +212,20 @@
       <motor name="l_calf_joint" joint="l_calf_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
       <motor name="l_ankle_pitch_joint" joint="l_ankle_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
       <motor name="l_ankle_roll_joint" joint="l_ankle_roll_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
-      
-      <motor name="l_shoulder_pitch_joint" joint="l_shoulder_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
-      <motor name="l_shoulder_roll_joint" joint="l_shoulder_roll_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
-      <motor name="l_upper_arm_joint" joint="l_upper_arm_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
-      <motor name="l_elbow_joint" joint="l_elbow_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
-      <motor name="l_wrist_joint" joint="l_wrist_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
-     
 
-      
-      
       <motor name="r_hip_pitch_joint" joint="r_hip_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
       <motor name="r_hip_roll_joint" joint="r_hip_roll_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
       <motor name="r_thigh_joint" joint="r_thigh_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
       <motor name="r_calf_joint" joint="r_calf_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
       <motor name="r_ankle_pitch_joint" joint="r_ankle_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
       <motor name="r_ankle_roll_joint" joint="r_ankle_roll_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
+      
+      <motor name="l_shoulder_pitch_joint" joint="l_shoulder_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
+      <motor name="l_shoulder_roll_joint" joint="l_shoulder_roll_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
+      <motor name="l_upper_arm_joint" joint="l_upper_arm_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
+      <motor name="l_elbow_joint" joint="l_elbow_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
+      <motor name="l_wrist_joint" joint="l_wrist_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
+
       <motor name="r_shoulder_pitch_joint" joint="r_shoulder_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
       <motor name="r_shoulder_roll_joint" joint="r_shoulder_roll_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
       <motor name="r_upper_arm_joint" joint="r_upper_arm_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
@@ -316,20 +315,4 @@
     <magnetometer name='magnetometer' site='imu'/>
 
   </sensor>
-   <!-- setup scene -->
-  <statistic center="1.0 0.7 1.0" extent="0.8"/>
-  <visual>
-    <headlight diffuse="0.6 0.6 0.6" ambient="0.1 0.1 0.1" specular="0.9 0.9 0.9"/>
-    <rgba haze="0.15 0.25 0.35 1"/>
-    <global azimuth="-140" elevation="-20"/>
-  </visual>
-  <asset>
-    <texture type="skybox" builtin="flat" rgb1="0 0 0" rgb2="0 0 0" width="512" height="3072"/>
-    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3" markrgb="0.8 0.8 0.8" width="300" height="300"/>
-    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
-  </asset>
-  <worldbody>
-    <light pos="1 0 3.5" dir="0 0 -1" directional="true"/>
-    <geom contype="15" conaffinity="15"  name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
-  </worldbody>
 </mujoco>

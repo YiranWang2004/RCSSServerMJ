@@ -1,0 +1,11 @@
+[INFO] Starting server...
+[INFO] Listening for agent connections on 127.0.0.1:60000
+[INFO] Listening for monitor connections on 127.0.0.1:60001
+[INFO] Starting Simulation loop.
+[INFO] Starting server... DONE!
+[INFO] Running a parallel simulation update loop.
+[INFO] New agent connection: TCP('127.0.0.1', 43914).
+[INFO] Player TestTeam #1 joined the game.
+[INFO] Agent TestTeam #1 @ TCP('127.0.0.1', 43914) activated.
+[INFO] Player TestTeam #1 left the game.
+[INFO] Agent TestTeam #1 @ TCP('127.0.0.1', 43914) removed.
