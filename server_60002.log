@@ -1,0 +1,35 @@
+[INFO] Starting server...
+[INFO] Listening for agent connections on 127.0.0.1:60002
+[INFO] Listening for monitor connections on 127.0.0.1:60003
+[INFO] Starting Simulation loop.
+[INFO] Starting server... DONE!
+[INFO] Running a parallel simulation update loop.
+[INFO] New agent connection: TCP('127.0.0.1', 46366).
+[INFO] Player TestTeam #1 joined the game.
+[INFO] Agent TestTeam #1 @ TCP('127.0.0.1', 46366) activated.
+Exception in thread sim_loop:
+Traceback (most recent call last):
+  File "/home/yiranwang/miniconda3/envs/robocup_sim/lib/python3.13/threading.py", line 1044, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "/home/yiranwang/miniconda3/envs/robocup_sim/lib/python3.13/threading.py", line 995, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/yiranwang/ZJUDancer/rcssservermj/src/rcsssmj/server/server.py", line 239, in _run_simulation
+    self._parallel_update_loop()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/yiranwang/ZJUDancer/rcssservermj/src/rcsssmj/server/server.py", line 268, in _parallel_update_loop
+    self.sim.generate_perceptions()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/yiranwang/ZJUDancer/rcssservermj/src/rcsssmj/sim/simulation.py", line 364, in generate_perceptions
+    sensor = self._mj_data.sensor(sensor_spec.name)
+KeyError: "Invalid name 'r-0-1-l_hip_pitch_joint_f'. Valid names: ['r-0-1-angular-velocity', 'r-0-1-l_ankle_pitch_joint_p', 'r-0-1-l_ankle_pitch_joint_v', 'r-0-1-l_ankle_roll_joint_p', 'r-0-1-l_ankle_roll_joint_v', 'r-0-1-l_calf_joint_p', 'r-0-1-l_calf_joint_v', 'r-0-1-l_elbow_joint_p', 'r-0-1-l_elbow_joint_v', 'r-0-1-l_hip_pitch_joint_p', 'r-0-1-l_hip_pitch_joint_v', 'r-0-1-l_hip_roll_joint_p', 'r-0-1-l_hip_roll_joint_v', 'r-0-1-l_shoulder_pitch_joint_p', 'r-0-1-l_shoulder_pitch_joint_v', 'r-0-1-l_shoulder_roll_joint_p', 'r-0-1-l_shoulder_roll_joint_v', 'r-0-1-l_thigh_joint_p', 'r-0-1-l_thigh_joint_v', 'r-0-1-l_upper_arm_joint_p', 'r-0-1-l_upper_arm_joint_v', 'r-0-1-l_wrist_joint_p', 'r-0-1-l_wrist_joint_v', 'r-0-1-linear-acceleration', 'r-0-1-linear-velocity', 'r-0-1-magnetometer', 'r-0-1-orientation', 'r-0-1-position', 'r-0-1-r_ankle_pitch_joint_p', 'r-0-1-r_ankle_pitch_joint_v', 'r-0-1-r_ankle_roll_joint_p', 'r-0-1-r_ankle_roll_joint_v', 'r-0-1-r_calf_joint_p', 'r-0-1-r_calf_joint_v', 'r-0-1-r_elbow_joint_p', 'r-0-1-r_elbow_joint_v', 'r-0-1-r_hip_pitch_joint_p', 'r-0-1-r_hip_pitch_joint_v', 'r-0-1-r_hip_roll_joint_p', 'r-0-1-r_hip_roll_joint_v', 'r-0-1-r_shoulder_pitch_joint_p', 'r-0-1-r_shoulder_pitch_joint_v', 'r-0-1-r_shoulder_roll_joint_p', 'r-0-1-r_shoulder_roll_joint_v', 'r-0-1-r_thigh_joint_p', 'r-0-1-r_thigh_joint_v', 'r-0-1-r_upper_arm_joint_p', 'r-0-1-r_upper_arm_joint_v', 'r-0-1-r_wrist_joint_p', 'r-0-1-r_wrist_joint_v']"
+[INFO] Shutting down Server...
+[INFO] Shutdown agent connection listener thread.
+[INFO] Shutdown monitor connection listener thread.
+[INFO] Disconnected agents.
+[INFO] Disconnected monitors.
+[INFO] Shutdown simulation.
+[INFO] Shutting down server... DONE!
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 64. The simulation is unstable. Time = 3.3000.
+

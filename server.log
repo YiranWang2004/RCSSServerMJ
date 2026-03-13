@@ -4,8 +4,62 @@
 [INFO] Starting Simulation loop.
 [INFO] Starting server... DONE!
 [INFO] Running a parallel simulation update loop.
-[INFO] New agent connection: TCP('127.0.0.1', 43914).
+[INFO] New agent connection: TCP('127.0.0.1', 54946).
 [INFO] Player TestTeam #1 joined the game.
-[INFO] Agent TestTeam #1 @ TCP('127.0.0.1', 43914) activated.
+[INFO] Agent TestTeam #1 @ TCP('127.0.0.1', 54946) activated.
 [INFO] Player TestTeam #1 left the game.
-[INFO] Agent TestTeam #1 @ TCP('127.0.0.1', 43914) removed.
+[INFO] Agent TestTeam #1 @ TCP('127.0.0.1', 54946) removed.
+[INFO] New agent connection: TCP('127.0.0.1', 45378).
+[INFO] Player TestTeam #1 joined the game.
+[INFO] Agent TestTeam #1 @ TCP('127.0.0.1', 45378) activated.
+[INFO] Player TestTeam #1 left the game.
+[INFO] Agent TestTeam #1 @ TCP('127.0.0.1', 45378) removed.
+[INFO] New agent connection: TCP('127.0.0.1', 54262).
+[INFO] Player TestTeam #1 joined the game.
+[INFO] Agent TestTeam #1 @ TCP('127.0.0.1', 54262) activated.
+[INFO] Player TestTeam #1 left the game.
+[INFO] Agent TestTeam #1 @ TCP('127.0.0.1', 54262) removed.
+[INFO] New agent connection: TCP('127.0.0.1', 35942).
+[INFO] Player TestTeam #1 joined the game.
+[INFO] Agent TestTeam #1 @ TCP('127.0.0.1', 35942) activated.
+[INFO] Player TestTeam #1 left the game.
+[INFO] Agent TestTeam #1 @ TCP('127.0.0.1', 35942) removed.
+[INFO] New agent connection: TCP('127.0.0.1', 45006).
+[INFO] Player TestTeam #1 joined the game.
+[INFO] Agent TestTeam #1 @ TCP('127.0.0.1', 45006) activated.
+Exception in thread sim_loop:
+Traceback (most recent call last):
+  File "/home/yiranwang/miniconda3/envs/robocup_sim/lib/python3.13/threading.py", line 1044, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "/home/yiranwang/miniconda3/envs/robocup_sim/lib/python3.13/threading.py", line 995, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/yiranwang/ZJUDancer/rcssservermj/src/rcsssmj/server/server.py", line 239, in _run_simulation
+    self._parallel_update_loop()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/yiranwang/ZJUDancer/rcssservermj/src/rcsssmj/server/server.py", line 286, in _parallel_update_loop
+    self.sim.step(monitor_commands)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/yiranwang/ZJUDancer/rcssservermj/src/rcsssmj/sim/simulation.py", line 274, in step
+    self._pre_step()
+    ~~~~~~~~~~~~~~^^
+  File "/home/yiranwang/ZJUDancer/rcssservermj/src/rcsssmj/sim/simulation.py", line 290, in _pre_step
+    obj.pre_step(self._mj_model, self._mj_data)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/yiranwang/ZJUDancer/rcssservermj/src/rcsssmj/sim/sim_agent.py", line 189, in pre_step
+    action.perform(ai)
+    ~~~~~~~~~~~~~~^^^^
+  File "/home/yiranwang/ZJUDancer/rcssservermj/src/rcsssmj/sim/actions.py", line 119, in perform
+    ai.ctrl_motor(self.actuator_name, self.q, self.dq, self.kp, self.kd, self.tau)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/yiranwang/ZJUDancer/rcssservermj/src/rcsssmj/sim/simulation.py", line 165, in ctrl_motor
+    actuator_tau_model = self.mj_model.actuator(name + '_tau')
+KeyError: "Invalid name 'r-0-1-l_hip_pitch_joint_tau'. Valid names: ['r-0-1-l_ankle_pitch_joint', 'r-0-1-l_ankle_roll_joint', 'r-0-1-l_calf_joint', 'r-0-1-l_elbow_joint', 'r-0-1-l_hip_pitch_joint', 'r-0-1-l_hip_roll_joint', 'r-0-1-l_shoulder_pitch_joint', 'r-0-1-l_shoulder_roll_joint', 'r-0-1-l_thigh_joint', 'r-0-1-l_upper_arm_joint', 'r-0-1-l_wrist_joint', 'r-0-1-r_ankle_pitch_joint', 'r-0-1-r_ankle_roll_joint', 'r-0-1-r_calf_joint', 'r-0-1-r_elbow_joint', 'r-0-1-r_hip_pitch_joint', 'r-0-1-r_hip_roll_joint', 'r-0-1-r_shoulder_pitch_joint', 'r-0-1-r_shoulder_roll_joint', 'r-0-1-r_thigh_joint', 'r-0-1-r_upper_arm_joint', 'r-0-1-r_wrist_joint']"
+[INFO] Shutting down Server...
+[INFO] Shutdown agent connection listener thread.
+[INFO] Shutdown monitor connection listener thread.
+[INFO] Disconnected agents.
+[INFO] Disconnected monitors.
+[INFO] Shutdown simulation.
+[INFO] Shutting down server... DONE!

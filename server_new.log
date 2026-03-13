@@ -1,0 +1,15 @@
+[INFO] Starting server...
+Traceback (most recent call last):
+  File "/home/yiranwang/miniconda3/envs/robocup_sim/bin/rcssservermj", line 6, in <module>
+    sys.exit(soccer_sim())
+             ~~~~~~~~~~^^
+  File "/home/yiranwang/ZJUDancer/rcssservermj/src/rcsssmj/__main__.py", line 79, in soccer_sim
+    server.run()
+    ~~~~~~~~~~^^
+  File "/home/yiranwang/ZJUDancer/rcssservermj/src/rcsssmj/server/server.py", line 125, in run
+    cl.bind()
+    ~~~~~~~^^
+  File "/home/yiranwang/ZJUDancer/rcssservermj/src/rcsssmj/server/communication/tcp_connection_listener.py", line 71, in bind
+    self._sock.bind((self.host, self.port))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 98] Address already in use
