@@ -278,9 +278,9 @@
     <position name="l_elbow_joint_pos" joint="l_elbow_joint" />
     <velocity name="l_elbow_joint_vel" joint="l_elbow_joint" />
 
-    <motor name="l_wrist_joint_tau" joint="l_wrist_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
+    <!-- <motor name="l_wrist_joint_tau" joint="l_wrist_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
     <position name="l_wrist_joint_pos" joint="l_wrist_joint" />
-    <velocity name="l_wrist_joint_vel" joint="l_wrist_joint" />
+    <velocity name="l_wrist_joint_vel" joint="l_wrist_joint" /> -->
 
     <!-- Right arm actuators -->
     <motor name="r_shoulder_pitch_joint_tau" joint="r_shoulder_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
@@ -299,9 +299,9 @@
     <position name="r_elbow_joint_pos" joint="r_elbow_joint" />
     <velocity name="r_elbow_joint_vel" joint="r_elbow_joint" />
 
-    <motor name="r_wrist_joint_tau" joint="r_wrist_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
+    <!-- <motor name="r_wrist_joint_tau" joint="r_wrist_joint" gear="1" ctrllimited="true" ctrlrange="-20 20" />
     <position name="r_wrist_joint_pos" joint="r_wrist_joint" />
-    <velocity name="r_wrist_joint_vel" joint="r_wrist_joint" />
+    <velocity name="r_wrist_joint_vel" joint="r_wrist_joint" /> -->
   </actuator>
 
   <sensor>
@@ -316,7 +316,7 @@
     <jointpos name="l_shoulder_roll_joint_p" joint="l_shoulder_roll_joint"/>
     <jointpos name="l_upper_arm_joint_p" joint="l_upper_arm_joint"/>
     <jointpos name="l_elbow_joint_p" joint="l_elbow_joint"/>
-    <jointpos name="l_wrist_joint_p" joint="l_wrist_joint"/>
+    <!-- <jointpos name="l_wrist_joint_p" joint="l_wrist_joint"/> -->
     <jointpos name="r_hip_pitch_joint_p" joint="r_hip_pitch_joint"/>
     <jointpos name="r_hip_roll_joint_p" joint="r_hip_roll_joint"/>
     <jointpos name="r_thigh_joint_p" joint="r_thigh_joint"/>
@@ -327,7 +327,7 @@
     <jointpos name="r_shoulder_roll_joint_p" joint="r_shoulder_roll_joint"/>
     <jointpos name="r_upper_arm_joint_p" joint="r_upper_arm_joint"/>
     <jointpos name="r_elbow_joint_p" joint="r_elbow_joint"/>
-    <jointpos name="r_wrist_joint_p" joint="r_wrist_joint"/>
+    <!-- <jointpos name="r_wrist_joint_p" joint="r_wrist_joint"/> -->
 
     <!-- Velocity sensors -->
     <jointvel name="l_hip_pitch_joint_v" joint="l_hip_pitch_joint"/>
@@ -341,7 +341,7 @@
     <jointvel name="l_shoulder_roll_joint_v" joint="l_shoulder_roll_joint"/>
     <jointvel name="l_upper_arm_joint_v" joint="l_upper_arm_joint"/>
     <jointvel name="l_elbow_joint_v" joint="l_elbow_joint"/>
-    <jointvel name="l_wrist_joint_v" joint="l_wrist_joint"/>
+    <!-- <jointvel name="l_wrist_joint_v" joint="l_wrist_joint"/> -->
     <jointvel name="r_hip_pitch_joint_v" joint="r_hip_pitch_joint"/>
     <jointvel name="r_hip_roll_joint_v" joint="r_hip_roll_joint"/>
     <jointvel name="r_thigh_joint_v" joint="r_thigh_joint"/>
@@ -352,7 +352,7 @@
     <jointvel name="r_shoulder_roll_joint_v" joint="r_shoulder_roll_joint"/>
     <jointvel name="r_upper_arm_joint_v" joint="r_upper_arm_joint"/>
     <jointvel name="r_elbow_joint_v" joint="r_elbow_joint"/>
-    <jointvel name="r_wrist_joint_v" joint="r_wrist_joint"/>
+    <!-- <jointvel name="r_wrist_joint_v" joint="r_wrist_joint"/> -->
 
     <!-- Force sensors -->
     <actuatorfrc name="l_hip_pitch_joint_f" actuator="l_hip_pitch_joint_tau" user="13" noise="1e-3"/>
@@ -366,7 +366,7 @@
     <actuatorfrc name="l_shoulder_roll_joint_f" actuator="l_shoulder_roll_joint_tau" user="13" noise="1e-3"/>
     <actuatorfrc name="l_upper_arm_joint_f" actuator="l_upper_arm_joint_tau" user="13" noise="1e-3"/>
     <actuatorfrc name="l_elbow_joint_f" actuator="l_elbow_joint_tau" user="13" noise="1e-3"/>
-    <actuatorfrc name="l_wrist_joint_f" actuator="l_wrist_joint_tau" user="13" noise="1e-3"/>
+    <!-- <actuatorfrc name="l_wrist_joint_f" actuator="l_wrist_joint_tau" user="13" noise="1e-3"/> -->
     <actuatorfrc name="r_hip_pitch_joint_f" actuator="r_hip_pitch_joint_tau" user="13" noise="1e-3"/>
     <actuatorfrc name="r_hip_roll_joint_f" actuator="r_hip_roll_joint_tau" user="13" noise="1e-3"/>
     <actuatorfrc name="r_thigh_joint_f" actuator="r_thigh_joint_tau" user="13" noise="1e-3"/>
@@ -377,7 +377,7 @@
     <actuatorfrc name="r_shoulder_roll_joint_f" actuator="r_shoulder_roll_joint_tau" user="13" noise="1e-3"/>
     <actuatorfrc name="r_upper_arm_joint_f" actuator="r_upper_arm_joint_tau" user="13" noise="1e-3"/>
     <actuatorfrc name="r_elbow_joint_f" actuator="r_elbow_joint_tau" user="13" noise="1e-3"/>
-    <actuatorfrc name="r_wrist_joint_f" actuator="r_wrist_joint_tau" user="13" noise="1e-3"/>
+    <!-- <actuatorfrc name="r_wrist_joint_f" actuator="r_wrist_joint_tau" user="13" noise="1e-3"/> -->
 
     <framequat name='orientation' objtype='site' noise='0.001' objname='imu'/>
     <framepos name='position' objtype='site' noise='0.001' objname='imu'/>
