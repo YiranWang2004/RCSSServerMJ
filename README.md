@@ -25,7 +25,8 @@ For more detailed installation instructions (virtual environments, installation 
 Start the soccer simulation server:
 
 ```bash
-rcssservermj -a 127.0.0.1 -p 60000 -m 60001
+rcssservermj -a 127.0.0.1 -c 60000 -m 60001 -b hl_adult -f hl_adult_2020
+原来的有错，我马上push你再pull一下
 ```
 
 CLI parameter:

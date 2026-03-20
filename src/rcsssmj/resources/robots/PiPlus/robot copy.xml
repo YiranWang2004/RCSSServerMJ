@@ -170,7 +170,7 @@
                   <inertial pos="0.0026578 0.0001757 -0.0126664" quat="0.558153 0.433128 0.435137 0.558141" mass="0.622348" diaginertia="0.00146851 0.00134933 0.000381364"/>
                   <joint name="r_ankle_roll_joint" pos="0 0 0" axis="1 0 0" range="-0.78 0.78" actuatorfrcrange="-20 20" damping="0.02" class="leg_motor"/>
                   <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.75294 0.75294 0.75294 1" mesh="r_ankle_roll_link"/>
-                  <geom name="r_ankle_roll_link_simplify" type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="ankle_roll_link_simplify"/>
+                  <geom name="ankle_roll_link_simplify" type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="ankle_roll_link_simplify"/>
                 </body>
               </body>
             </body>
