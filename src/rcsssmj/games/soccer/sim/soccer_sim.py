@@ -597,7 +597,13 @@ class SoccerSimulation(BaseSimulation):
         x_factor = -1 if agent_id.team_id == TeamSide.LEFT.value else 1
         theta_shift = 0 if agent_id.team_id == TeamSide.LEFT.value else pi
 
-        pos = (abs(beam_pose[0]) * x_factor, beam_pose[1], 0.6745)
+        # Get robot standing height from the torso body position in the robot spec
+        beam_height = 0.6745  # default (T1)
+        for body in player.spec.bodies:
+            if body.name.endswith('torso'):
+                beam_height = body.pos[2]
+                break
+        pos = (abs(beam_pose[0]) * x_factor, beam_pose[1], beam_height)
         theta = beam_pose[2] + theta_shift
         quat = quat_from_axis_angle((0, 0, 1), theta)
 

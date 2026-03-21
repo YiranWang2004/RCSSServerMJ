@@ -57,7 +57,7 @@
 
       <inertial pos="0.00504177 -0.000223877 0.0965201" quat="0.999242 0.00281629 0.0376757 0.0093836" mass="3.45126" diaginertia="0.046034 0.0431943 0.00969223"/>
       <freejoint name="root"/>
-      <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.75294 0.75294 0.75294 1" mesh="base_link"/>
+      <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" material="team" mesh="base_link"/>
       <geom name="torso_box1" size="0.077 0.065 0.07" pos="0 0 0.07" type="box" rgba="0.75294 0.75294 0.75294 1"/>
       <geom name="torso_box2" size="0.0175 0.0175 0.037" pos="0 0 0.16" type="box" rgba="0.75294 0.75294 0.75294 1"/>
       <geom name="torso_box3" size="0.088 0.046 0.003" pos="-0.007 0 0.142" type="box" rgba="0.75294 0.75294 0.75294 1"/>
