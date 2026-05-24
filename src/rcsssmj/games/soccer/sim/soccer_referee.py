@@ -7,11 +7,15 @@ from rcsssmj.games.soccer.play_mode import PlayMode
 from rcsssmj.games.soccer.sim.soccer_agent import SoccerAgent
 from rcsssmj.games.soccer.sim.soccer_game import PSoccerGame
 from rcsssmj.games.teams import TeamSide
+from rcsssmj.sim.agent_id import AgentID
 
 if TYPE_CHECKING:
     from rcsssmj.sim.agent_id import AgentID
 
 logger = logging.getLogger(__name__)
+
+_ILLEGAL_DEFENSE_MAX_PLAYERS = 2
+_ILLEGAL_DEFENSE_DEBOUNCE_STEPS = 5
 
 
 class SoccerReferee:
@@ -54,6 +58,12 @@ class SoccerReferee:
         self._standing_time: dict[AgentID, float] = {}
         """Time each agent has been standing."""
 
+        self._goalie_area_entry_time: dict[str, dict[AgentID, float]] = {'left': {}, 'right': {}}
+        """Tracks when (sim_time) each agent entered its own goalie area, per side."""
+
+        self._illegal_defense_violation_steps: dict[str, int] = {'left': 0, 'right': 0}
+        """Consecutive steps where more than the allowed number of own-team players are in the goalie area."""
+
     def reset(self) -> None:
         """Reinitialize the referee."""
 
@@ -62,6 +72,8 @@ class SoccerReferee:
         self._ground_time.clear()
         self._not_standing_time.clear()
         self._standing_time.clear()
+        self._goalie_area_entry_time = {'left': {}, 'right': {}}
+        self._illegal_defense_violation_steps = {'left': 0, 'right': 0}
 
     def is_beaming_allowed(self) -> bool:
         """Check if an agent is allowed to beam in the current game state."""
@@ -294,6 +306,7 @@ class SoccerReferee:
         # check for rule violations
         self._check_fouls()
         self._check_incapable_fouls()
+        self._check_illegal_defense()
 
         # automatically progress play mode based on timeouts, object locations and action triggers
         self._check_timeouts()
@@ -392,6 +405,46 @@ class SoccerReferee:
             elif self._not_standing_time[a_id] > not_standing_max:
                 self._penalize(agent)
                 self._not_standing_time[a_id] = 0.0
+
+    def _check_illegal_defense(self) -> None:
+        """Penalize the last player to enter its own goalie area when more than the allowed number are inside."""
+
+        sim_time = self.game.game_state.sim_time
+
+        checks = (
+            ('left', self.game.field.left_goalie_area, self.game.left_players),
+            ('right', self.game.field.right_goalie_area, self.game.right_players),
+        )
+
+        for side, area, players in checks:
+            entry_times = self._goalie_area_entry_time[side]
+
+            in_area_now: set[AgentID] = {agent.agent_id for agent in players.values() if area.contains(agent.xpos[0], agent.xpos[1])}
+
+            # record entry time for agents that just entered
+            for agent_id in in_area_now:
+                if agent_id not in entry_times:
+                    entry_times[agent_id] = sim_time
+
+            # remove agents that left the area
+            for agent_id in list(entry_times):
+                if agent_id not in in_area_now:
+                    del entry_times[agent_id]
+
+            if len(in_area_now) > _ILLEGAL_DEFENSE_MAX_PLAYERS:
+                self._illegal_defense_violation_steps[side] += 1
+
+                if self._illegal_defense_violation_steps[side] >= _ILLEGAL_DEFENSE_DEBOUNCE_STEPS:
+                    last_entrant = max(
+                        (agent for agent in players.values() if agent.agent_id in in_area_now),
+                        key=lambda a: entry_times[a.agent_id],
+                    )
+                    logger.info('Illegal defense: penalizing %s (entered at t=%.3f) from %s goalie area', last_entrant.agent_id, entry_times[last_entrant.agent_id], side)
+                    del entry_times[last_entrant.agent_id]
+                    self._illegal_defense_violation_steps[side] = 0
+                    self._penalize(last_entrant)
+            else:
+                self._illegal_defense_violation_steps[side] = 0
 
     def _check_timeouts(self) -> None:
         """Check timeouts (kick-off time, throw-in time, etc.) for the current play mode."""
