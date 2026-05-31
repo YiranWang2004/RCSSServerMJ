@@ -26,7 +26,8 @@ from rcsssmj.sim.perceptions import (
 )
 from rcsssmj.sim.sim_agent import SimAgent
 from rcsssmj.sim.sim_object import SimObject
-from rcsssmj.sim.state_info import SceneGraph, SimStateInformation
+from rcsssmj.sim.state_info import GlobalTime, SceneGraph, SimStateInformation
+
 
 if TYPE_CHECKING:
     from rcsssmj.sim.audio_data import AudioData
@@ -84,6 +85,12 @@ class BaseSimulation(ABC):
 
         self._world_markers: Sequence[tuple[str, str]] = []
         """The sequence of world markers used for generating vision perceptions."""
+
+        self._body_children_map: dict[int, list[int]] = {}
+        """The mapping from bodies to their children."""
+
+        self._rsmp_descriptions: dict[str, list[list[str]]] = {}
+        """The RSMP descriptions (value) to add for simulated bodies. The key is the body name."""
 
     @property
     def frame_id(self) -> int:
@@ -234,6 +241,9 @@ class BaseSimulation(ABC):
         # extract visible object markers of world
         self._world_markers = [(site.name, site.name[:-10]) for site in self._mj_spec.sites if site.name.endswith('-vismarker')]
 
+        # update body to children mapping
+        self._update_body_children_map()
+
         # reset frame id
         self._frame_id = 0
 
@@ -303,6 +313,20 @@ class BaseSimulation(ABC):
         # rebind objects
         for obj in self.sim_objects:
             obj.bind(self._mj_model, self._mj_data)
+
+        # update body to children mapping
+        self._update_body_children_map()
+
+
+    def _update_body_children_map(self) -> None:
+        """Update the mapping for bodies to their children."""
+
+        self._body_children_map = {i: [] for i in range(self._mj_model.nbody)}
+        for i in range(self._mj_model.nbody):
+            parent = self._mj_model.body_parentid[i]
+            if parent >= 0 and parent != i:
+                self._body_children_map[parent].append(i)
+
 
     def step(self, monitor_commands: Sequence[MonitorCommand]) -> None:
         """Perform a simulation step.
@@ -518,7 +542,7 @@ class BaseSimulation(ABC):
     def generate_state_information(self) -> list[SimStateInformation]:
         """Generate simulation state information for updating monitor instances."""
 
-        return [SceneGraph(self._mj_model, self._mj_data)]
+        return [GlobalTime(self.sim_time), SceneGraph(self._mj_model, self._mj_data, self._body_children_map, list(self.sim_agents), self._rsmp_descriptions)]
 
     @abstractmethod
     def _create_world(self) -> Any | None:

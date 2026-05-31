@@ -537,7 +537,7 @@ class SimServer(Generic[S]):
         state_info = self.sim.generate_state_information()
 
         for monitor in monitors:
-            monitor.update(state_info, self.sim.frame_id)
+            monitor.update(state_info, self.sim.frame_id, False)
 
     def _remove_monitors(self, monitors: Sequence[SimMonitor]) -> None:
         """Remove the given monitors from the simulation.

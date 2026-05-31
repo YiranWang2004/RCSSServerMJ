@@ -142,3 +142,55 @@ class AABB3D:
         """Check if the given x-, y- and z-coordinates are within the bounding box."""
 
         return self.min_x <= x and x <= self.max_x and self.min_y <= y and y <= self.max_y and self.min_z <= z and z <= self.max_z
+
+
+Matrix4x4 = tuple[float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float]
+
+
+def matrix_4x4_mul(a: Matrix4x4, b: Matrix4x4) -> Matrix4x4:
+    """Multiply two 4x4 matrices."""
+
+    return tuple(a[i * 4] * b[j] + a[i * 4 + 1] * b[4 + j] + a[i * 4 + 2] * b[8 + j] + a[i * 4 + 3] * b[12 + j] for i in range(4) for j in range(4))
+
+
+def matrix_4x4_transpose(m: Matrix4x4) -> Matrix4x4:
+    """Transpose a 4x4 matrix."""
+
+    # fmt: off
+    return (
+        m[0], m[4], m[8],  m[12],
+        m[1], m[5], m[9],  m[13],
+        m[2], m[6], m[10], m[14],
+        m[3], m[7], m[11], m[15],
+    )
+    # fmt: on
+
+
+def to_transformation_matrix(quat: tuple[float, float, float, float], pos: tuple[float, float, float]) -> Matrix4x4:
+    """Create a transformation matrix from a quaternion and a position."""
+
+    # fmt: off
+    return (
+        2 * (quat[0] * quat[0] + quat[1] * quat[1]) - 1, 2 * (quat[1] * quat[2] - quat[0] * quat[3]),     2 * (quat[1] * quat[3] + quat[0] * quat[2]),     pos[0],
+        2 * (quat[1] * quat[2] + quat[0] * quat[3]),     2 * (quat[0] * quat[0] + quat[2] * quat[2]) - 1, 2 * (quat[2] * quat[3] - quat[0] * quat[1]),     pos[1],
+        2 * (quat[1] * quat[3] - quat[0] * quat[2]),     2 * (quat[2] * quat[3] + quat[0] * quat[1]),     2 * (quat[0] * quat[0] + quat[3] * quat[3]) - 1, pos[2],
+        0,                                               0,                                               0,                                               1,
+    )
+    # fmt: on
+
+
+def transformation_matrix_inverse(
+    m: Matrix4x4,
+) -> Matrix4x4:
+    """
+    Calculate the inverse of a transformation matrix.
+    """
+
+    # fmt: off
+    return (
+        m[0], m[4], m[8],  -(m[0] * m[3] + m[4] * m[7] + m[8]  * m[11]),
+        m[1], m[5], m[9],  -(m[1] * m[3] + m[5] * m[7] + m[9]  * m[11]),
+        m[2], m[6], m[10], -(m[2] * m[3] + m[6] * m[7] + m[10] * m[11]),
+        0.0,  0.0,  0.0,   1.0
+    )
+    # fmt: on

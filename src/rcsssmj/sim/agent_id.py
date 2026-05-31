@@ -89,3 +89,24 @@ def decode_agent_prefix(prefixed_name: str) -> AgentID | None:
         return None
 
     return AgentID(int(chunks[1]), int(chunks[2]))
+
+
+def strip_agent_prefix(prefixed_name: str) -> str:
+    """Strip the agent id from the given prefix or named entity.
+
+    Parameter
+    ---------
+    prefixed_name: str
+        A name starting with an agent prefix.
+    """
+
+    if not prefixed_name.startswith('r-'):
+        return prefixed_name
+
+    chunks = prefixed_name.split('-')
+
+    if len(chunks) < 3:
+        return prefixed_name
+
+    return "-".join(chunks[3:])
+

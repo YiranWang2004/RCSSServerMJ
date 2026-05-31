@@ -91,7 +91,7 @@ class MujocoMonitor(SimMonitor):
         glfw.poll_events()  # make sure there are no pending events, otherwise the window will just freeze and not close properly
         glfw.terminate()
 
-    def update(self, state_info: Sequence[SimStateInformation], frame_id: int) -> None:
+    def update(self, state_info: Sequence[SimStateInformation], frame_id: int, did_recompile: bool) -> None:
         scene_graph = None
 
         # process state information

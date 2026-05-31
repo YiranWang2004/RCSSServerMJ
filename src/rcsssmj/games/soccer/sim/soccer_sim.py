@@ -132,6 +132,7 @@ class SoccerSimulation(BaseSimulation):
 
         # initialize ball
         self.ball.init(self._mj_spec, self._mj_model, self._mj_data)
+        self._rsmp_descriptions['ball'] = [['ball']]
 
         return True
 
@@ -625,20 +626,18 @@ class SoccerSimulation(BaseSimulation):
     def generate_state_information(self) -> list[SimStateInformation]:
         state_info = super().generate_state_information()
 
-        state_info.insert(
-            0,
+        state_info.append(
             SoccerGameInformation(
                 left_team=self.game_state.get_team_name(TeamSide.LEFT) or '<LEFT>',
                 right_team=self.game_state.get_team_name(TeamSide.RIGHT) or '<RIGHT>',
                 left_score=self.game_state.get_team_score(TeamSide.LEFT),
                 right_score=self.game_state.get_team_score(TeamSide.RIGHT),
                 play_time=self.game_state.play_time,
-                play_mode=self.game_state.play_mode.value,
+                play_mode=self.game_state.play_mode,
             ),
         )
 
-        if self._frame_id == 0:
-            state_info.insert(0, SoccerEnvironmentInformation(self.field, self.rules))
+        state_info.append(SoccerEnvironmentInformation(self.field, self.rules, self.ball.radius))
 
         return state_info
 
