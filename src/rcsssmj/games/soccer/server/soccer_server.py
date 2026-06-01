@@ -91,7 +91,7 @@ class SoccerSimServer(SimServer[SoccerSimulation]):
         # register monitor connection listeners
         self._connection_listeners.append(
             TCPConnectionListener(
-                lambda conn: self._run_remote_monitor(RemoteMonitor(conn, self._command_parser)),
+                lambda conn: self._run_remote_monitor(RemoteMonitor(conn, self._command_parser, update_interval=2)),
                 'monitor',
                 host,
                 monitor_port,

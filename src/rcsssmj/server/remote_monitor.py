@@ -80,7 +80,7 @@ class SimMonitor(ABC):
 class RemoteMonitor(SimMonitor):
     """Remote simulation monitor, utilizing a message based connection to communicate with an external monitor process."""
 
-    def __init__(self, conn: PConnection, parser: CommandParser) -> None:
+    def __init__(self, conn: PConnection, parser: CommandParser, update_interval: int = 1) -> None:
         """Construct a new remote simulation monitor client.
 
         Parameter
@@ -90,9 +90,12 @@ class RemoteMonitor(SimMonitor):
 
         parser: CommandParser
             The monitor command parser instance.
+
+        update_interval: int
+            The update interval of the monitor.
         """
 
-        super().__init__()
+        super().__init__(update_interval=update_interval)
 
         self._conn: PConnection = conn
         """The monitor connection for exchanging state and command messages."""
@@ -109,6 +112,9 @@ class RemoteMonitor(SimMonitor):
         self._node_cache: TransformNode = TransformNode()
         """The transform node cache."""
 
+        self._did_recompile: bool = False
+        """If the model was recompiled since the last update."""
+
     def shutdown(self) -> None:
         self._conn.shutdown()
 
@@ -117,7 +123,11 @@ class RemoteMonitor(SimMonitor):
             self._monitor_thread.join()
 
     def update(self, state_info: Sequence[SimStateInformation], frame_id: int, did_recompile: bool) -> None:
-        full = did_recompile or not (0 <= frame_id - self._last_full_state_frame_id < 250)
+        self._did_recompile |= did_recompile
+        if frame_id % self.update_interval != 0:
+            return
+
+        full = self._did_recompile or not (0 <= frame_id - self._last_full_state_frame_id < 250)
         if full:
             self._node_cache.reset()
 
@@ -135,6 +145,7 @@ class RemoteMonitor(SimMonitor):
         self._conn.send_message(msg.encode('utf-8'))
         if full:
             self._last_full_state_frame_id = frame_id
+        self._did_recompile = False
 
     def run(self) -> None:
         """Continuously receive and process monitor commands.
