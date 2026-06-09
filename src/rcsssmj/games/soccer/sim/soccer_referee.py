@@ -275,9 +275,15 @@ class SoccerReferee:
         agent_na_touch_ball = self.game.game_state.agent_na_touch_ball
         sim_time = self.game.game_state.sim_time
 
-        # check no score rule
+        # check no score rule: the kick-off team may only score once a second player of the same team touched the ball
+        # outside the middle circle or a player of the opposing team touched the ball
         if self.game.game_state.team_na_score is not None and active_ball_contact is not None and last_ball_contact is not None:
-            self.game.game_state.team_na_score = None
+            if TeamSide.from_id(active_ball_contact.team_id) != self.game.game_state.team_na_score:
+                # a player of the opposing team touched the ball --> lift the no-score restriction
+                self.game.game_state.team_na_score = None
+            elif sqrt(self.game.ball.xpos[0] ** 2 + self.game.ball.xpos[1] ** 2) > self.game.field.center_circle_radius:
+                # a second player of the kick-off team touched the ball outside the middle circle --> lift the no-score restriction
+                self.game.game_state.team_na_score = None
 
         # check double-touch rule
         if agent_na_touch_ball is not None and active_ball_contact is not None and last_ball_contact is not None:
