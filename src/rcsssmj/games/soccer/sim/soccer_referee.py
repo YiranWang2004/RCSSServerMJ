@@ -1,12 +1,15 @@
 import logging
 from itertools import chain
 from math import pi, sqrt
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from rcsssmj.games.soccer.play_mode import PlayMode
 from rcsssmj.games.soccer.sim.soccer_agent import SoccerAgent
 from rcsssmj.games.soccer.sim.soccer_game import PSoccerGame
 from rcsssmj.games.teams import TeamSide
+
+if TYPE_CHECKING:
+    from rcsssmj.sim.agent_id import AgentID
 
 logger = logging.getLogger(__name__)
 
@@ -24,17 +27,33 @@ class SoccerReferee:
         """
 
         # MYPY-HACK: The game instance may initially be `None` but will be automatically injected in this case by the simulation (cast is used to silence mypy while preventing repetitive `None` checks)
-        self.game: PSoccerGame = cast(PSoccerGame, game)
+        self.game: PSoccerGame = cast('PSoccerGame', game)
         """The soccer game instance to referee."""
 
         self._did_act: bool = False
         """Flag if the referee has already taken a decision in this referee cycle."""
+
+        self._last_sim_time: float = 0.0
+        """The simulation time of the last referee cycle."""
+
+        self._ground_time: dict[AgentID, float] = {}
+        """Time each agent has been on the ground."""
+
+        self._not_standing_time: dict[AgentID, float] = {}
+        """Time each agent has been not standing."""
+
+        self._standing_time: dict[AgentID, float] = {}
+        """Time each agent has been standing."""
 
     def reset(self) -> None:
         """Reinitialize the referee."""
 
         # init referee state
         self._did_act = False
+        self._last_sim_time = 0.0
+        self._ground_time.clear()
+        self._not_standing_time.clear()
+        self._standing_time.clear()
 
     def is_beaming_allowed(self) -> bool:
         """Check if an agent is allowed to beam in the current game state."""
@@ -287,6 +306,74 @@ class SoccerReferee:
                     return
             else:
                 self.game.game_state.agent_na_touch_ball = None
+
+        # check for incapable fouls
+        self._check_incapable_fouls()
+
+    def _check_incapable_fouls(self) -> None:
+        """Check for incapable fouls (players laying on the ground for too long)."""
+
+        sim_time = self.game.game_state.sim_time
+        dt = sim_time - self._last_sim_time
+        self._last_sim_time = sim_time
+
+        if self.game.game_state.play_mode == PlayMode.BEFORE_KICK_OFF:
+            return
+
+        ground_z_val = 0.15
+        middle_z_val = 0.25
+        field_width = self.game.field.field_dim[1]
+
+        out_of_bounds_y = (field_width / 2.0) + 0.1
+        goalie_ground_max = self.game.rules.goalie_ground_max_time
+        goalie_not_standing_max = self.game.rules.goalie_not_standing_max_time
+        ground_max = self.game.rules.ground_max_time
+        not_standing_max = self.game.rules.not_standing_max_time
+
+        for agent in chain(self.game.left_players.values(), self.game.right_players.values()):
+            a_id = agent.agent_id
+
+            if a_id not in self._ground_time:
+                self._ground_time[a_id] = 0.0
+                self._not_standing_time[a_id] = 0.0
+                self._standing_time[a_id] = 0.0
+
+            # Only check if agent is inside the field (+ 0.1 margin)
+            if abs(agent.xpos[1]) > out_of_bounds_y:
+                self._ground_time[a_id] = 0.0
+                self._not_standing_time[a_id] = 0.0
+                self._standing_time[a_id] = 0.0
+                continue
+
+            z_pos = agent.xpos[2]
+
+            if z_pos < middle_z_val:
+                self._not_standing_time[a_id] += dt
+                self._standing_time[a_id] = 0.0
+
+            if z_pos < ground_z_val:
+                self._ground_time[a_id] += dt
+
+            if z_pos >= middle_z_val:
+                self._standing_time[a_id] += dt
+                self._ground_time[a_id] = 0.0
+
+            if self._standing_time[a_id] > 0.5:
+                self._not_standing_time[a_id] = 0.0
+
+            if a_id.player_no == 1:
+                if self._ground_time[a_id] > goalie_ground_max:
+                    self._penalize(agent)
+                    self._ground_time[a_id] = 0.0
+                elif self._not_standing_time[a_id] > goalie_not_standing_max:
+                    self._penalize(agent)
+                    self._not_standing_time[a_id] = 0.0
+            elif self._ground_time[a_id] > ground_max:
+                self._penalize(agent)
+                self._ground_time[a_id] = 0.0
+            elif self._not_standing_time[a_id] > not_standing_max:
+                self._penalize(agent)
+                self._not_standing_time[a_id] = 0.0
 
     def _check_timeouts(self) -> None:
         """Check timeouts (kick-off time, throw-in time, etc.) for the current play mode."""
@@ -561,6 +648,9 @@ class SoccerReferee:
         x = 0.0
         y = y_side * ((self.game.field.field_dim[1] / 2) + self.game.field.field_border)
 
+        # Extract other player locations once to avoid nested looping
+        other_players = [(a.xpos[0], a.xpos[1]) for a in chain(self.game.left_players.values(), self.game.right_players.values()) if a != player]
+
         # check for free space in 2m steps
         x_step = -2.0 if player.agent_id.team_id == TeamSide.LEFT.value else 2.0
         is_occupied = True
@@ -568,9 +658,9 @@ class SoccerReferee:
             x += x_step
 
             # check location for collisions
-            # TODO: Extract other player locations once and vectorize distance calculations (should be more efficient even if the python for-loop may be early aborted).
-            for agent in chain(self.game.left_players.values(), self.game.right_players.values()):
-                if agent != player and sqrt((agent.xpos[0] - x) ** 2 + (agent.xpos[1] - y) ** 2) < 1.0:
+            for ax, ay in other_players:
+                # use distance squared to avoid calculating sqrt each time
+                if (ax - x) ** 2 + (ay - y) ** 2 < 1.0:
                     # other player is occupying the location already
                     break
             else:
