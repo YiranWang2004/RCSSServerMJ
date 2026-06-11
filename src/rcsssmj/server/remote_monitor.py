@@ -61,7 +61,7 @@ class SimMonitor(ABC):
         """Wait until the monitor listener thread terminates (if existing)."""
 
     @abstractmethod
-    def update(self, state_info: Sequence[SimStateInformation], frame_id: int, did_recompile: bool) -> None:
+    def update(self, state_info: Sequence[SimStateInformation], frame_id: int, last_recompilation: int) -> None:
         """Update the monitor state.
 
         Parameter
@@ -72,8 +72,8 @@ class SimMonitor(ABC):
         frame_id: int
             The current simulation frame id.
 
-        did_recompile: int
-            If a model recompilation happend since the last update.
+        last_recompilation: int
+            The frame number of the last model recompilation.
         """
 
 
@@ -112,6 +112,9 @@ class RemoteMonitor(SimMonitor):
         self._node_cache: TransformNode = TransformNode()
         """The transform node cache."""
 
+        self._last_recompilation: int = -1
+        """The frame number of the last model recompilation."""
+
         self._did_recompile: bool = False
         """If the model was recompiled since the last update."""
 
@@ -122,8 +125,9 @@ class RemoteMonitor(SimMonitor):
         if self._monitor_thread is not None:
             self._monitor_thread.join()
 
-    def update(self, state_info: Sequence[SimStateInformation], frame_id: int, did_recompile: bool) -> None:
-        self._did_recompile |= did_recompile
+    def update(self, state_info: Sequence[SimStateInformation], frame_id: int, last_recompilation: int) -> None:
+        self._did_recompile |= last_recompilation != self._last_recompilation
+        self._last_recompilation = last_recompilation
         if frame_id % self.update_interval != 0:
             return
 

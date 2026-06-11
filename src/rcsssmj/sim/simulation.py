@@ -86,6 +86,9 @@ class BaseSimulation(ABC):
         self._world_markers: Sequence[tuple[str, str]] = []
         """The sequence of world markers used for generating vision perceptions."""
 
+        self._last_recompilation: int = 0
+        """The frame number of the last model recompilation."""
+
         self._body_children_map: dict[int, list[int]] = {}
         """The mapping from bodies to their children."""
 
@@ -127,6 +130,12 @@ class BaseSimulation(ABC):
         """The length of a simulation step (as perceived by an agent)."""
 
         return float(self.mj_model.opt.timestep * self.n_substeps)
+
+    @property
+    def last_recompilation(self) -> int:
+        """The frame number of the last model recompilation."""
+
+        return self._last_recompilation
 
     @property
     @abstractmethod
@@ -297,6 +306,9 @@ class BaseSimulation(ABC):
 
     def _recompile(self) -> None:
         """Recompile spec and bind sim objects."""
+
+        # remember recompilation frame id
+        self._last_recompilation = self._frame_id
 
         # recompile spec
         self._mj_model, self._mj_data = self._mj_spec.recompile(self._mj_model, self._mj_data)
