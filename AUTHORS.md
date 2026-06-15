@@ -11,3 +11,4 @@ RCSSServerMJ was designed and developed by Stefan Glaser based on an experimenta
 Special thanks to the following individuals, that contributed to the project:
 
 - __Klaus Dorer__
+- __Pedro Rabelo__
