@@ -12,3 +12,4 @@ Special thanks to the following individuals, that contributed to the project:
 
 - __Klaus Dorer__
 - __Pedro Rabelo__
+- __Caio Lucena__
