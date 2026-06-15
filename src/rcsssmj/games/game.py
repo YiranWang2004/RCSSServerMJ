@@ -8,3 +8,7 @@ class PGame(Protocol):
     @property
     def sim_time(self) -> float:
         """The current simulation time."""
+
+    @property
+    def timestep(self) -> float:
+        """The length of a simulation step (as perceived by an agent)."""

@@ -45,11 +45,23 @@ class SoccerReferee:
         self.reference_radius: float = 0.0
         """A radius related to the reference point."""
 
+        self._ground_time: dict[AgentID, float] = {}
+        """Time each agent has been on the ground."""
+
+        self._not_standing_time: dict[AgentID, float] = {}
+        """Time each agent has been not standing."""
+
+        self._standing_time: dict[AgentID, float] = {}
+        """Time each agent has been standing."""
+
     def reset(self) -> None:
         """Reinitialize the referee."""
 
         # init referee state
         self._did_act = False
+        self._ground_time.clear()
+        self._not_standing_time.clear()
+        self._standing_time.clear()
 
     def is_beaming_allowed(self) -> bool:
         """Check if an agent is allowed to beam in the current game state."""
@@ -281,6 +293,7 @@ class SoccerReferee:
 
         # check for rule violations
         self._check_fouls()
+        self._check_incapable_fouls()
 
         # automatically progress play mode based on timeouts, object locations and action triggers
         self._check_timeouts()
@@ -319,6 +332,66 @@ class SoccerReferee:
                     return
             else:
                 self.agent_na_touch_ball = None
+
+    def _check_incapable_fouls(self) -> None:
+        """Check for incapable fouls (players laying on the ground for too long)."""
+
+        if self.game.game_state.play_mode == PlayMode.BEFORE_KICK_OFF:
+            return
+
+        ground_z_val = 0.15
+        middle_z_val = 0.25
+
+        out_of_bounds_y = (self.game.field.field_dim[1] / 2.0) + 0.1
+        goalie_ground_max = self.game.rules.goalie_ground_max_time
+        goalie_not_standing_max = self.game.rules.goalie_not_standing_max_time
+        ground_max = self.game.rules.ground_max_time
+        not_standing_max = self.game.rules.not_standing_max_time
+
+        for agent in chain(self.game.left_players.values(), self.game.right_players.values()):
+            a_id = agent.agent_id
+
+            if a_id not in self._ground_time:
+                self._ground_time[a_id] = 0.0
+                self._not_standing_time[a_id] = 0.0
+                self._standing_time[a_id] = 0.0
+
+            # Only check if agent is inside the field (+ 0.1 margin)
+            if abs(agent.xpos[1]) > out_of_bounds_y:
+                self._ground_time[a_id] = 0.0
+                self._not_standing_time[a_id] = 0.0
+                self._standing_time[a_id] = 0.0
+                continue
+
+            z_pos = agent.xpos[2]
+
+            if z_pos < middle_z_val:
+                self._not_standing_time[a_id] += self.game.timestep
+                self._standing_time[a_id] = 0.0
+
+            if z_pos < ground_z_val:
+                self._ground_time[a_id] += self.game.timestep
+
+            if z_pos >= middle_z_val:
+                self._standing_time[a_id] += self.game.timestep
+                self._ground_time[a_id] = 0.0
+
+            if self._standing_time[a_id] > 0.5:
+                self._not_standing_time[a_id] = 0.0
+
+            if a_id.player_no == 1:
+                if self._ground_time[a_id] > goalie_ground_max:
+                    self._penalize(agent)
+                    self._ground_time[a_id] = 0.0
+                elif self._not_standing_time[a_id] > goalie_not_standing_max:
+                    self._penalize(agent)
+                    self._not_standing_time[a_id] = 0.0
+            elif self._ground_time[a_id] > ground_max:
+                self._penalize(agent)
+                self._ground_time[a_id] = 0.0
+            elif self._not_standing_time[a_id] > not_standing_max:
+                self._penalize(agent)
+                self._not_standing_time[a_id] = 0.0
 
     def _check_timeouts(self) -> None:
         """Check timeouts (kick-off time, throw-in time, etc.) for the current play mode."""
@@ -602,7 +675,7 @@ class SoccerReferee:
             # check location for collisions
             # TODO: Extract other player locations once and vectorize distance calculations (should be more efficient even if the python for-loop may be early aborted).
             for agent in chain(self.game.left_players.values(), self.game.right_players.values()):
-                if agent != player and sqrt((agent.xpos[0] - x) ** 2 + (agent.xpos[1] - y) ** 2) < 1.0:
+                if agent != player and (agent.xpos[0] - x) ** 2 + (agent.xpos[1] - y) ** 2 < 1.0:
                     # other player is occupying the location already
                     break
             else:

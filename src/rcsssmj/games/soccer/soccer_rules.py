@@ -96,6 +96,18 @@ class SoccerRules:
     throw_in_wait_time: int = 1  # unofficial
     """The time (in seconds) to referee will wait after the ball left the field before switching to throw-in play mode."""
 
+    ground_max_time: int = 15  # from simspark rules
+    """The maximum time (in seconds) a field player may be on the ground before being repositioned."""
+
+    goalie_ground_max_time: int = 30  # from simspark rules
+    """The maximum time (in seconds) the goalie may be on the ground before being repositioned."""
+
+    not_standing_max_time: int = 30  # from simspark rules
+    """The maximum time (in seconds) a field player may be sitting or laying down before being repositioned."""
+
+    goalie_not_standing_max_time: int = 60  # from simspark rules
+    """The maximum time (in seconds) the goalie may be sitting or laying down before being repositioned."""
+
     default_field_version: SoccerFieldVersions = SoccerFieldVersions.FIFA  # official
     """The default field version to use with the rule book."""
 
