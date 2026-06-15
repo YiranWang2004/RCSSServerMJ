@@ -1,11 +1,6 @@
-from typing import TYPE_CHECKING
-
 from rcsssmj.games.soccer.game_phase import GamePhase
 from rcsssmj.games.soccer.play_mode import PlayMode
 from rcsssmj.games.teams import TeamSide
-
-if TYPE_CHECKING:
-    from rcsssmj.sim.agent_id import AgentID
 
 
 class GameState:
@@ -61,12 +56,6 @@ class GameState:
 
         self.right_team_score: int = 0
         """The current score of the right team."""
-
-        self.agent_na_touch_ball: AgentID | None = None
-        """The ID of the agent not allowed to touch the ball a second time (if existing)."""
-
-        self.team_na_score: TeamSide | None = None
-        """The team side, which is not allowed to score a goal until another agent touches the ball again (if existing)."""
 
     def reset(
         self,

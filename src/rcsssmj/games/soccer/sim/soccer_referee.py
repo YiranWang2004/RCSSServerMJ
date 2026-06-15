@@ -1,12 +1,15 @@
 import logging
 from itertools import chain
 from math import pi, sqrt
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from rcsssmj.games.soccer.play_mode import PlayMode
 from rcsssmj.games.soccer.sim.soccer_agent import SoccerAgent
 from rcsssmj.games.soccer.sim.soccer_game import PSoccerGame
 from rcsssmj.games.teams import TeamSide
+
+if TYPE_CHECKING:
+    from rcsssmj.sim.agent_id import AgentID
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +32,18 @@ class SoccerReferee:
 
         self._did_act: bool = False
         """Flag if the referee has already taken a decision in this referee cycle."""
+
+        self.agent_na_touch_ball: AgentID | None = None
+        """The ID of the agent not allowed to touch the ball a second time (if existing)."""
+
+        self.team_na_score: TeamSide | None = None
+        """The team side, which is not allowed to score a goal until another agent touches the ball again (if existing)."""
+
+        self.reference_point: tuple[float, float] = (0.0, 0.0)
+        """A 2D point representing a reference point for enforcing certain rules."""
+
+        self.reference_radius: float = 0.0
+        """A radius related to the reference point."""
 
     def reset(self) -> None:
         """Reinitialize the referee."""
@@ -56,8 +71,11 @@ class SoccerReferee:
         self._did_act = True
 
         self.game.game_state.set_play_mode_for_team(team_side, PlayMode.KICK_OFF_LEFT, PlayMode.KICK_OFF_RIGHT)
-        self.game.game_state.agent_na_touch_ball = None
-        self.game.game_state.team_na_score = team_side
+
+        self.agent_na_touch_ball = None
+        self.team_na_score = team_side
+        self.reference_point = (0, 0)
+        self.reference_radius = self.game.field.center_circle_radius
 
         self.game.ball.drop_at(0, 0)
 
@@ -79,8 +97,9 @@ class SoccerReferee:
         self._did_act = True
 
         self.game.game_state.set_play_mode_for_team(team_side, PlayMode.THROW_IN_LEFT, PlayMode.THROW_IN_RIGHT)
-        self.game.game_state.agent_na_touch_ball = None
-        self.game.game_state.team_na_score = None
+
+        self.agent_na_touch_ball = None
+        self.team_na_score = None
 
         y = self.game.field.field_area.min_y if self.game.ball.xpos[1] < 0 else self.game.field.field_area.max_y
         self.game.ball.drop_at(self.game.ball.xpos[0], y)
@@ -97,8 +116,9 @@ class SoccerReferee:
         self._did_act = True
 
         self.game.game_state.set_play_mode_for_team(team_side, PlayMode.CORNER_KICK_LEFT, PlayMode.CORNER_KICK_RIGHT)
-        self.game.game_state.agent_na_touch_ball = None
-        self.game.game_state.team_na_score = None
+
+        self.agent_na_touch_ball = None
+        self.team_na_score = None
 
         x = self.game.field.field_area.max_x if team_side == TeamSide.LEFT else self.game.field.field_area.min_x
         y = self.game.field.field_area.min_y if self.game.ball.xpos[1] < 0 else self.game.field.field_area.max_y
@@ -116,8 +136,9 @@ class SoccerReferee:
         self._did_act = True
 
         self.game.game_state.set_play_mode_for_team(team_side, PlayMode.GOAL_KICK_LEFT, PlayMode.GOAL_KICK_RIGHT)
-        self.game.game_state.agent_na_touch_ball = None
-        self.game.game_state.team_na_score = None
+
+        self.agent_na_touch_ball = None
+        self.team_na_score = None
 
         drop_pos = self.game.field.left_goalie_area.center() if team_side == TeamSide.LEFT else self.game.field.right_goalie_area.center()
         self.game.ball.drop_at(drop_pos[0], drop_pos[1])
@@ -140,8 +161,9 @@ class SoccerReferee:
         self._did_act = True
 
         self.game.game_state.set_play_mode(PlayMode.GAME_OVER)
-        self.game.game_state.agent_na_touch_ball = None
-        self.game.game_state.team_na_score = None
+
+        self.agent_na_touch_ball = None
+        self.team_na_score = None
 
         self.game.ball.reset_contacts()
 
@@ -170,8 +192,11 @@ class SoccerReferee:
         self._did_act = True
 
         self.game.game_state.set_play_mode_for_team(team_side, PlayMode.FREE_KICK_LEFT, PlayMode.FREE_KICK_RIGHT)
-        self.game.game_state.agent_na_touch_ball = None
-        self.game.game_state.team_na_score = team_side
+
+        self.agent_na_touch_ball = None
+        self.team_na_score = team_side
+        self.reference_point = (self.game.ball.xpos[0], self.game.ball.xpos[1])
+        self.reference_radius = self.game.field.center_circle_radius
 
         self.game.ball.drop()
 
@@ -187,8 +212,9 @@ class SoccerReferee:
         self._did_act = True
 
         self.game.game_state.set_play_mode_for_team(team_side, PlayMode.DIRECT_FREE_KICK_LEFT, PlayMode.DIRECT_FREE_KICK_RIGHT)
-        self.game.game_state.agent_na_touch_ball = None
-        self.game.game_state.team_na_score = None
+
+        self.agent_na_touch_ball = None
+        self.team_na_score = None
 
         self.game.ball.drop()
 
@@ -204,8 +230,9 @@ class SoccerReferee:
         self._did_act = True
 
         self.game.game_state.set_play_mode_for_team(team_side, PlayMode.PENALTY_KICK_LEFT, PlayMode.PENALTY_KICK_RIGHT)
-        self.game.game_state.agent_na_touch_ball = None
-        self.game.game_state.team_na_score = None
+
+        self.agent_na_touch_ball = None
+        self.team_na_score = None
 
         penalty_spot_x = self.game.field.field_area.max_x - self.game.field.penalty_spot_distance
         self.game.ball.drop_at(-penalty_spot_x if team_side == TeamSide.LEFT else penalty_spot_x)
@@ -272,27 +299,26 @@ class SoccerReferee:
         active_ball_contact = self.game.ball.active_contact
         last_ball_contact = self.game.ball.last_contact
         last_ball_contact_change = self.game.ball.contact_change
-        agent_na_touch_ball = self.game.game_state.agent_na_touch_ball
         sim_time = self.game.game_state.sim_time
 
         # check no score rule: the kick-off team may only score once a second player of the same team touched the ball
         # outside the middle circle or a player of the opposing team touched the ball
-        if self.game.game_state.team_na_score is not None and active_ball_contact is not None and last_ball_contact is not None:
-            if TeamSide.from_id(active_ball_contact.team_id) != self.game.game_state.team_na_score:
+        if self.team_na_score is not None and active_ball_contact is not None and last_ball_contact is not None:
+            if active_ball_contact.team_id != self.team_na_score.value:
                 # a player of the opposing team touched the ball --> lift the no-score restriction
-                self.game.game_state.team_na_score = None
-            elif sqrt(self.game.ball.xpos[0] ** 2 + self.game.ball.xpos[1] ** 2) > self.game.field.center_circle_radius:
+                self.team_na_score = None
+            elif (self.game.ball.xpos[0] - self.reference_point[0]) ** 2 + (self.game.ball.xpos[1] - self.reference_point[1]) ** 2 > self.reference_radius**2:
                 # a second player of the kick-off team touched the ball outside the middle circle --> lift the no-score restriction
-                self.game.game_state.team_na_score = None
+                self.team_na_score = None
 
         # check double-touch rule
-        if agent_na_touch_ball is not None and active_ball_contact is not None and last_ball_contact is not None:
-            if agent_na_touch_ball == last_ball_contact and agent_na_touch_ball == active_ball_contact:
+        if self.agent_na_touch_ball is not None and active_ball_contact is not None and last_ball_contact is not None:
+            if self.agent_na_touch_ball == last_ball_contact and self.agent_na_touch_ball == active_ball_contact:
                 if last_ball_contact_change is not None and sim_time - last_ball_contact_change > 1:
-                    self.free_kick(TeamSide.get_opposing_side(agent_na_touch_ball.team_id))
+                    self.free_kick(TeamSide.get_opposing_side(self.agent_na_touch_ball.team_id))
                     return
             else:
-                self.game.game_state.agent_na_touch_ball = None
+                self.agent_na_touch_ball = None
 
     def _check_timeouts(self) -> None:
         """Check timeouts (kick-off time, throw-in time, etc.) for the current play mode."""
@@ -359,7 +385,7 @@ class SoccerReferee:
             if pm == PlayMode.GOAL_KICK_LEFT:
                 # drop ball at a corner of the left goalie area
                 self.drop_ball((self.game.field.left_goalie_area.max_x, self.game.field.left_goalie_area.max_y))
-            elif self.game.game_state.team_na_score == TeamSide.RIGHT:
+            elif self.team_na_score == TeamSide.RIGHT:
                 self.goal_kick(TeamSide.LEFT)
             else:
                 self.goal(TeamSide.RIGHT)
@@ -370,7 +396,7 @@ class SoccerReferee:
             if pm == PlayMode.GOAL_KICK_RIGHT:
                 # drop ball at a corner of the left goalie area
                 self.drop_ball((self.game.field.right_goalie_area.min_x, self.game.field.right_goalie_area.max_y))
-            elif self.game.game_state.team_na_score == TeamSide.LEFT:
+            elif self.team_na_score == TeamSide.LEFT:
                 self.goal_kick(TeamSide.RIGHT)
             else:
                 self.goal(TeamSide.LEFT)
@@ -440,7 +466,7 @@ class SoccerReferee:
             PlayMode.DIRECT_FREE_KICK_RIGHT,
         ):
             if len(self.game.get_players(self.game.ball.active_contact.team_id)) > 1:
-                self.game.game_state.agent_na_touch_ball = self.game.ball.active_contact
+                self.agent_na_touch_ball = self.game.ball.active_contact
 
             self.play_on()
             return
@@ -626,7 +652,7 @@ class KickChallengeReferee(SoccerReferee):
 
     def _check_fouls(self) -> None:
         # disable no score rule
-        self.game.game_state.team_na_score = None
+        self.team_na_score = None
 
         # check double-touch rule
         if self.game.ball.active_contact is not None and self.game.ball.active_contact == self.game.ball.last_contact:
