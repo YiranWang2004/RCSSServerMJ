@@ -184,6 +184,13 @@ class SoccerReferee:
 
         self._did_act = True
 
+        # log the final score once, on transition into game-over
+        if self.game.game_state.play_mode != PlayMode.GAME_OVER:
+            gs = self.game.game_state
+            left_name = gs.left_team_name or 'Left'
+            right_name = gs.right_team_name or 'Right'
+            logger.info('Game over! Final score: %s %d - %d %s', left_name, gs.left_team_score, gs.right_team_score, right_name)
+
         self.game.game_state.set_play_mode(PlayMode.GAME_OVER)
 
         self.agent_na_touch_ball = None
