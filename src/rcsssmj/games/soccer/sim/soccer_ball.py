@@ -21,6 +21,9 @@ class SoccerBall(SimObject):
         self._active_contact: AgentID | None = None
         """The currently active agent contact (can last more than one simulation cycle)."""
 
+        self._active_contact_body_parts: set[str] | None = None
+        """The body parts involved in the currently active contact."""
+
         self._last_contact: AgentID | None = None
         """The previous agent contact (updated after the active contact has changed / has been lost)."""
 
@@ -38,6 +41,12 @@ class SoccerBall(SimObject):
         """The currently active agent contact (can last more than one simulation cycle)."""
 
         return self._active_contact
+
+    @property
+    def active_contact_body_parts(self) -> set[str] | None:
+        """The body parts involved in the currently active contact."""
+
+        return self._active_contact_body_parts
 
     @property
     def last_contact(self) -> AgentID | None:
@@ -61,16 +70,20 @@ class SoccerBall(SimObject):
         self._prev_xpos = self.xpos.astype(np.float64)
         self._radius = radius
         self._active_contact = None
+        self._active_contact_body_parts = None
         self._last_contact = None
         self._contact_change = None
 
-    def _set_active_contact(self, contact: AgentID | None, sim_time: float) -> None:
+    def _set_active_contact(self, contact: AgentID | None, body_parts: set[str] | None, sim_time: float) -> None:
         """Set the currently active agent contact.
 
         Parameter
         ---------
         contact: AgentID | None
             The agent currently in contact with the ball or None if there is no such contact at the moment.
+
+        body_parts: set[str] | None
+            The body parts of the agent currently in contact with the ball or None.
 
         sim_time: float
             The current simulation time.
@@ -85,6 +98,7 @@ class SoccerBall(SimObject):
             self._contact_change = sim_time
 
         self._active_contact = contact
+        self._active_contact_body_parts = body_parts
 
     def get_most_recent_contact(self) -> AgentID | None:
         """Return the most recent contact (either the active or the last contact)."""
@@ -95,6 +109,7 @@ class SoccerBall(SimObject):
         """Reset agent contact information."""
 
         self._active_contact = None
+        self._active_contact_body_parts = None
         self._last_contact = None
         self._contact_change = None
 
@@ -105,9 +120,12 @@ class SoccerBall(SimObject):
         ball_contacts = filter_agent_contacts_with('ball', mj_model, mj_data)
         if ball_contacts:
             if self._active_contact not in ball_contacts:
-                self._set_active_contact(next(iter(ball_contacts)), mj_data.time)
+                active_agent = next(iter(ball_contacts))
+                self._set_active_contact(active_agent, ball_contacts[active_agent], mj_data.time)
+            else:
+                self._active_contact_body_parts = ball_contacts[self._active_contact]
         else:
-            self._set_active_contact(None, mj_data.time)
+            self._set_active_contact(None, None, mj_data.time)
 
     def drop(self) -> None:
         """Drop the ball at its current location and reset all contacts."""

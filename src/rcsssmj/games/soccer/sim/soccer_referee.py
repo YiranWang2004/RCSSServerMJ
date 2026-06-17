@@ -3,6 +3,8 @@ from itertools import chain
 from math import pi, sqrt
 from typing import TYPE_CHECKING, cast
 
+import numpy as np
+
 from rcsssmj.games.soccer.play_mode import PlayMode
 from rcsssmj.games.soccer.sim.soccer_agent import SoccerAgent
 from rcsssmj.games.soccer.sim.soccer_game import PSoccerGame
@@ -31,7 +33,7 @@ class SoccerReferee:
         """
 
         # MYPY-HACK: The game instance may initially be `None` but will be automatically injected in this case by the simulation (cast is used to silence mypy while preventing repetitive `None` checks)
-        self.game: PSoccerGame = cast(PSoccerGame, game)
+        self.game: PSoccerGame = cast('PSoccerGame', game)
         """The soccer game instance to referee."""
 
         self._did_act: bool = False
@@ -344,6 +346,10 @@ class SoccerReferee:
                 # a second player of the kick-off team touched the ball outside the middle circle --> lift the no-score restriction
                 self.team_na_score = None
 
+        # check hand touch foul
+        if active_ball_contact is not None and self.__check_hand_foul():
+            self.direct_free_kick(TeamSide.get_opposing_side(active_ball_contact.team_id))
+
         # check double-touch rule
         if self.agent_na_touch_ball is not None and active_ball_contact is not None and last_ball_contact is not None:
             if self.agent_na_touch_ball == last_ball_contact and self.agent_na_touch_ball == active_ball_contact:
@@ -452,6 +458,136 @@ class SoccerReferee:
                     self._penalize(last_entrant)
             else:
                 self._illegal_defense_violation_steps[side] = 0
+
+    def __check_hand_foul(self) -> bool:
+        active_ball_contact = self.game.ball.active_contact
+        body_parts = self.game.ball.active_contact_body_parts
+
+        # Check if the ball is touching any hand or forearm
+        if active_ball_contact is not None and body_parts is not None and any('hand' in part or 'forearm' in part for part in body_parts):
+
+            # Exceptions
+            agent = self.game.get_players(active_ball_contact.team_id)[active_ball_contact.player_no]
+            mj_model = getattr(self.game, 'mj_model', None)
+            mj_data = getattr(self.game, 'mj_data', None)
+
+            is_foul = True
+
+            if mj_model is not None and mj_data is not None:
+                # Exception: Goalie touching the ball inside their own penalty area
+                if agent.agent_id.player_no == 1:
+                    ball_x, ball_y = self.game.ball.xpos[0], self.game.ball.xpos[1]
+                    if agent.agent_id.team_id == TeamSide.LEFT.value:
+                        if self.game.field.left_penalty_area is not None and self.game.field.left_penalty_area.contains(ball_x, ball_y):
+                            is_foul = False
+                    elif agent.agent_id.team_id == TeamSide.RIGHT.value:
+                        if self.game.field.right_penalty_area is not None and self.game.field.right_penalty_area.contains(ball_x, ball_y):
+                            is_foul = False
+
+                if is_foul:
+                    # Retrieve the touched hand/forearm geometries and their dimensions
+                    hand_geoms = []
+                    for part in body_parts:
+                        gid = agent.hand_geom_ids.get(part, -1)
+                        if gid >= 0:
+                            hand_pos = np.array(mj_data.geom_xpos[gid])
+                            h_len = max(mj_model.geom_size[gid][0], mj_model.geom_size[gid][1])
+                            h_rad = min(mj_model.geom_size[gid][0], mj_model.geom_size[gid][1])
+                            hand_geoms.append((hand_pos, h_len, h_rad, part))
+                    # If valid geometries were found, check for morphological extensions
+                    if hand_geoms:
+
+                        # Retrieve the torso's bounding box and position as the reference center
+                        torso_geom_id = agent.torso_geom_id
+                        if torso_geom_id < 0:
+                            # Cannot reliably check extensions without a reference torso
+                            return False
+
+                        torso_x_size = mj_model.geom_size[torso_geom_id][0]
+                        torso_y_size = mj_model.geom_size[torso_geom_id][1]
+                        torso_pos = np.array(mj_data.geom_xpos[torso_geom_id])
+
+                        # Determine the top of the robot's head to calculate vertical extensions
+                        head_pos = torso_pos + np.array([0.0, 0.0, 0.25]) # Fallback
+                        head_top_z = head_pos[2] + 0.10 # Fallback
+
+                        camera_site_id = agent.camera_site_id
+                        if camera_site_id >= 0:
+                            head_pos = np.array(mj_data.site_xpos[camera_site_id])
+                            head_top_z = head_pos[2]
+
+                            # Find the body that owns the camera (the Head)
+                            head_body_id = mj_model.site_bodyid[camera_site_id]
+                            geom_adr = mj_model.body_geomadr[head_body_id]
+                            geom_num = mj_model.body_geomnum[head_body_id]
+
+                            # Scan all head geometries to find the absolute highest point (Z-axis)
+                            for i in range(geom_num):
+                                gid = geom_adr + i
+                                gpos = mj_data.geom_xpos[gid]
+                                gsize = mj_model.geom_size[gid]
+                                top_z = gpos[2] + max(gsize)
+                                head_top_z = max(head_top_z, top_z)
+
+                        head_z = head_pos[2]
+                        is_fallen = head_z < 0.45
+                        is_extended = False
+
+                        torso_body_id = agent.torso_body_id
+                        if torso_body_id < 0:
+                            return False
+
+                        torso_xmat = np.array(mj_data.xmat[torso_body_id]).reshape(3, 3)
+
+                        if is_fallen:
+                            head_local = torso_xmat.T @ (head_pos - torso_pos)
+
+                            for hp, h_len, h_rad, part in hand_geoms:
+                                hand_local = torso_xmat.T @ (hp - torso_pos)
+
+                                # 1. Hand raised high in the air (Global Z)
+                                tolerancia_z_global = torso_pos[2] + (max(torso_x_size, torso_y_size) * 2)
+                                ext_z_global = hp[2] > tolerancia_z_global
+
+                                # 2. Hand stretched above the head (Local Z)
+                                # Only penalized if fallen on the side (shoulder-to-shoulder axis points up)
+                                is_fallen_on_side = abs(torso_xmat[2, 1]) > abs(torso_xmat[2, 0])
+                                ext_torso_head = is_fallen_on_side and (hand_local[2] > abs(head_local[2]))
+
+                                # Note: Arms extended to the sides or front (Local X and Y) are ignored
+                                # since they are legitimately used for ground support when fallen.
+
+                                if ext_z_global or ext_torso_head:
+                                    is_extended = True
+                                    break
+
+                        else:
+
+                            for hp, h_len, h_rad, part in hand_geoms:
+                                hand_local = torso_xmat.T @ (hp - torso_pos)
+
+                                # Dynamic extension tolerance based on robot size and arm radius
+                                MAX_FRONTAL_ARM_WIDTHS = 3
+                                MAX_LATERAL_ARM_WIDTHS = 5
+
+                                tolerancia_x_dinamica = torso_x_size + (h_rad * MAX_FRONTAL_ARM_WIDTHS)
+                                tolerancia_y_dinamica = torso_y_size + (h_rad * MAX_LATERAL_ARM_WIDTHS)
+
+                                # Check extensions in the torso's local X/Y axes or above the head (Global Z)
+                                ext_x = abs(hand_local[0]) > tolerancia_x_dinamica
+                                ext_y = abs(hand_local[1]) > tolerancia_y_dinamica
+                                ext_z = hp[2] > head_top_z
+
+                                if ext_x or ext_y or ext_z:
+                                    is_extended = True
+                                    break
+
+                        if not is_extended:
+                            is_foul = False
+
+            return is_foul
+
+        return False
 
     def _check_timeouts(self) -> None:
         """Check timeouts (kick-off time, throw-in time, etc.) for the current play mode."""

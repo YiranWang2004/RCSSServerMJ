@@ -64,7 +64,7 @@ def zero_all_joints(
             mj_data.qacc[qvel_adr] = 0.0
 
 
-def filter_agent_contacts_with(geom_name: str, mj_model: Any, mj_data: Any) -> set[AgentID]:
+def filter_agent_contacts_with(geom_name: str, mj_model: Any, mj_data: Any) -> dict[AgentID, set[str]]:
     """Filter contact list for agent contacts with the given geometry.
 
     Parameter
@@ -81,16 +81,16 @@ def filter_agent_contacts_with(geom_name: str, mj_model: Any, mj_data: Any) -> s
 
     gid = mujoco.mj_name2id(mj_model, mujoco.mjtObj.mjOBJ_GEOM, geom_name)
 
-    agent_contacts: set[AgentID] = set()
+    agent_contacts: dict[AgentID, set[str]] = {}
 
     for other_gid in mj_data.contact.geom1[mj_data.contact.geom2 == gid]:
         other_name = mujoco.mj_id2name(mj_model, mujoco.mjtObj.mjOBJ_GEOM, other_gid)
         if (agent_id := decode_agent_prefix(other_name)) is not None:
-            agent_contacts.add(agent_id)
+            agent_contacts.setdefault(agent_id, set()).add(other_name)
 
     for other_gid in mj_data.contact.geom2[mj_data.contact.geom1 == gid]:
         other_name = mujoco.mj_id2name(mj_model, mujoco.mjtObj.mjOBJ_GEOM, other_gid)
         if (agent_id := decode_agent_prefix(other_name)) is not None:
-            agent_contacts.add(agent_id)
+            agent_contacts.setdefault(agent_id, set()).add(other_name)
 
     return agent_contacts

@@ -1,5 +1,7 @@
 from typing import Any, Final
 
+import mujoco
+
 from rcsssmj.games.soccer.sim.soccer_sim_interfaces import PSoccerSimActionInterface
 from rcsssmj.sim.agent_id import AgentID
 from rcsssmj.sim.sim_agent import TypedSimAgent
@@ -37,6 +39,41 @@ class SoccerAgent(TypedSimAgent[PSoccerSimActionInterface]):
 
         self.ai: Final[PSoccerSimActionInterface] = ai
         """The action interface."""
+
+        self.torso_geom_id: int = -1
+        """The cached id of the torso geometry."""
+
+        self.torso_body_id: int = -1
+        """The cached id of the torso body."""
+
+        self.camera_site_id: int = -1
+        """The cached id of the camera site."""
+
+        self.hand_geom_ids: dict[str, int] = {}
+        """Dictionary mapping hand and forearm geometry names to their ids."""
+
+    def bind(self, mj_model: Any, mj_data: Any) -> None:
+        """Bind the agent to the physics simulation.
+
+        Parameter
+        ---------
+        mj_model: Any
+            The mujoco simulation model.
+        mj_data: Any
+            The mujoco simulation data.
+        """
+        super().bind(mj_model, mj_data)
+
+        self.torso_geom_id = mujoco.mj_name2id(mj_model, mujoco.mjtObj.mjOBJ_GEOM, self.agent_id.prefix + 'torso')
+        self.camera_site_id = mujoco.mj_name2id(mj_model, mujoco.mjtObj.mjOBJ_SITE, self.agent_id.prefix + 'camera')
+        self.torso_body_id = mujoco.mj_name2id(mj_model, mujoco.mjtObj.mjOBJ_BODY, self.root_body_name)
+
+        self.hand_geom_ids = {}
+        for i in range(mj_model.ngeom):
+            geom_name = mujoco.mj_id2name(mj_model, mujoco.mjtObj.mjOBJ_GEOM, i)
+            if geom_name and geom_name.startswith(self.agent_id.prefix):
+                if 'hand' in geom_name or 'forearm' in geom_name:
+                    self.hand_geom_ids[geom_name] = i
 
     def _get_action_interface(self) -> PSoccerSimActionInterface:
         return self.ai
