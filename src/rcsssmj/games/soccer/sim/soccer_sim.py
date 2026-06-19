@@ -628,6 +628,7 @@ class SoccerSimulation(BaseSimulation):
 
         state_info.append(
             SoccerGameInformation(
+                rules=self.rules,
                 left_team=self.game_state.get_team_name(TeamSide.LEFT) or '<LEFT>',
                 right_team=self.game_state.get_team_name(TeamSide.RIGHT) or '<RIGHT>',
                 left_score=self.game_state.get_team_score(TeamSide.LEFT),

@@ -48,6 +48,7 @@ class SoccerGameInformation(SimStateInformation):
 
     def __init__(
         self,
+        rules: SoccerRules,
         left_team: str,
         right_team: str,
         left_score: int,
@@ -59,6 +60,9 @@ class SoccerGameInformation(SimStateInformation):
 
         Parameter
         ---------
+        rules: SoccerRules
+            The active soccer rule book.
+
         left_team: str
             The name of the left team.
 
@@ -80,6 +84,9 @@ class SoccerGameInformation(SimStateInformation):
 
         super().__init__('soccer-game')
 
+        self.rules: Final[SoccerRules] = rules
+        """The active soccer rule book."""
+
         self.left_team: Final[str] = left_team
         """The name of the left team."""
 
@@ -99,4 +106,4 @@ class SoccerGameInformation(SimStateInformation):
         """The current play mode."""
 
     def to_sexp(self, full: bool) -> str:
-        return f'((gs 1 0)(time {self.play_time})(team_left {self.left_team})(team_right {self.right_team})(half 1)(score_left {self.left_score})(score_right {self.right_score})(play_mode {[pm for pm in PlayMode].index(self.play_mode)}))'
+        return f'((gs 1 0)(time {self.play_time})(team_left {self.left_team})(team_right {self.right_team})(half {2 if self.play_time > self.rules.half_time else 1})(score_left {self.left_score})(score_right {self.right_score})(play_mode {[pm for pm in PlayMode].index(self.play_mode)}))'
