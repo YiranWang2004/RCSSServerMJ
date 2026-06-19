@@ -145,9 +145,8 @@ class SceneGraph(SimStateInformation):
         else:
             sg_out.append('(nd')
 
-        for geom_id in range(self.mj_model.ngeom):
-            if self.mj_model.geom_bodyid[geom_id] != body_id:
-                continue
+        body_geomadr = self.mj_model.body_geomadr[body_id]
+        for geom_id in range(body_geomadr, body_geomadr + self.mj_model.body_geomnum[body_id]):
 
             geom_pos = self.mj_model.geom_pos[geom_id]
             geom_quat = self.mj_model.geom_quat[geom_id]
