@@ -36,7 +36,11 @@ class SoccerEnvironmentInformation(SimStateInformation):
         """The ball radius."""
 
     def to_sexp(self, full: bool) -> str:
-        return f'((ge 1 0)(FieldLength {self.field.field_dim[0]})(FieldWidth {self.field.field_dim[1]})(FieldHeight {self.field.field_dim[2]})(GoalWidth {self.field.goal_dim[0]})(GoalDepth {self.field.goal_dim[1]})(GoalHeight {self.field.goal_dim[2]})(BorderSize {self.field.line_width})(FreeKickDistance 0)(BallRadius {self.ball_radius})(RuleGoalPauseTime {self.rules.goal_pause_time})(RuleHalfTime {self.rules.half_time})(play_modes {" ".join([pm.value for pm in PlayMode])}))'
+        ge = f'((ge 1 0)(FieldLength {self.field.field_dim[0]})(FieldWidth {self.field.field_dim[1]})(FieldHeight {self.field.field_dim[2]})(GoalWidth {self.field.goal_dim[0]})(GoalDepth {self.field.goal_dim[1]})(GoalHeight {self.field.goal_dim[2]})(BorderSize {self.field.line_width})(FreeKickDistance 0)(BallRadius {self.ball_radius})(RuleGoalPauseTime {self.rules.goal_pause_time})(RuleHalfTime {self.rules.half_time})(play_modes {" ".join([pm.value for pm in PlayMode])})(CenterCircleRadius {self.field.center_circle_radius})(CorderAreaRadius {self.field.corner_area_radius})(GoalieAreaLength {self.field.goalie_area_dim[0]})(GoalieAreaWidth {self.field.goalie_area_dim[1]})(PenaltySpotDistance {self.field.penalty_spot_distance})'
+        if self.field.penalty_area_dim is not None:
+            ge += f'(PenaltyAreaLength {self.field.penalty_area_dim[0]})(PenaltyAreaWidth {self.field.penalty_area_dim[1]})'
+        ge += ')'
+        return ge
 
 
 class SoccerGameInformation(SimStateInformation):
