@@ -100,20 +100,20 @@ class SceneGraph(SimStateInformation):
         return None
 
     def to_sexp(self, full: bool, node_cache: TransformNode=TransformNode()) -> str:
-        sg = '((sg 1 0)'
+        sg = ['((sg 1 0)']
         if full:
-            sg += 'full'
+            sg.append('full')
         else:
-            sg += 'diff'
+            sg.append('diff')
 
         # start with root body (assuming it has id 0)
-        sg += self._serialize_body(0, to_transformation_matrix((1, 0, 0, 0), (0, 0, 0)), False, not full, node_cache)
+        self._serialize_body(sg, 0, to_transformation_matrix((1, 0, 0, 0), (0, 0, 0)), False, not full, node_cache)
 
-        sg += ')'
+        sg.append(')')
 
-        return sg
+        return ''.join(sg)
 
-    def _serialize_body(self, body_id: int, parent_tmat: Matrix4x4, parent_is_agent: bool, update: bool, cached_node: TransformNode):
+    def _serialize_body(self, sg_out: list[str], body_id: int, parent_tmat: Matrix4x4, parent_is_agent: bool, update: bool, cached_node: TransformNode):
         """Returns the serialized value of the given body."""
 
         body = self.mj_model.body(body_id)
@@ -122,18 +122,16 @@ class SceneGraph(SimStateInformation):
         agent_id = AgentID.from_prefixed_name(body.name)
         sim_agent = self._get_sim_agent(agent_id) if agent_id is not None else None
 
-        dsc = ''
+        dsc = []
         if not parent_is_agent and sim_agent is not None:
-            dsc += f'(agent {sim_agent.team_name} {sim_agent.agent_id.player_no})'
+            dsc.append(f'(agent {sim_agent.team_name} {sim_agent.agent_id.player_no})')
         for desc in self.descriptions.get(body.name, []):
-            dsc += f'({" ".join(desc)})'
-        if dsc != '':
+            dsc.append(f'({" ".join(desc)})')
+        if len(dsc) != 0:
             if not update:
-                result = f'(nd DSC{dsc}'
+                sg_out.append(f'(nd DSC{"".join(dsc)}')
             else:
-                result = '(nd'
-        else:
-            result = ''
+                sg_out.append('(nd')
 
         tmat = to_transformation_matrix(quat, pos)
         inverse_parent = transformation_matrix_inverse(parent_tmat)
@@ -143,9 +141,9 @@ class SceneGraph(SimStateInformation):
         needs_update = cached_node.update(tmat_local, init=not update)
         if needs_update:
             slt = _serialize_slt(tmat_local)
-            result += f'(nd TRF{slt}'
+            sg_out.append(f'(nd TRF{slt}')
         else:
-            result += '(nd'
+            sg_out.append('(nd')
 
         for geom_id in range(self.mj_model.ngeom):
             if self.mj_model.geom_bodyid[geom_id] != body_id:
@@ -217,20 +215,20 @@ class SceneGraph(SimStateInformation):
                 if not update:
                     slt_mat = matrix_4x4_transpose(to_transformation_matrix(geom_quat, geom_pos))
                     slt = _serialize_slt(slt_mat)
-                    result += f'(nd TRF{slt}'
+                    sg_out.append(f'(nd TRF{slt}')
                 else:
-                    result += '(nd'
+                    sg_out.append('(nd')
 
             if load_node is not None:
                 if not update:
                     scale_str = f'(sSc {scale[0]} {scale[1]} {scale[2]})' if scale[0] != 1 or scale[1] != 1 or scale[2] != 1 else ''
-                    result += f'(nd SMN (setVisible {int(visible)}){load_node}{mat_str}{scale_str})'
+                    sg_out.append(f'(nd SMN (setVisible {int(visible)}){load_node}{mat_str}{scale_str})')
                 else:
-                    result += '(nd)'
+                    sg_out.append('(nd)')
 
             if need_geom_transform:
                 # Close geom TRF node
-                result += ')'
+                sg_out.append(')')
 
         for i, child_id in enumerate(self.body_children_map[body_id]):
             if len(cached_node.children) > i:
@@ -238,16 +236,14 @@ class SceneGraph(SimStateInformation):
             else:
                 cached_child_node = TransformNode()
                 cached_node.children.append(cached_child_node)
-            result += self._serialize_body(child_id, tmat, parent_is_agent or sim_agent is not None, update, cached_child_node)
+            self._serialize_body(sg_out, child_id, tmat, parent_is_agent or sim_agent is not None, update, cached_child_node)
 
         # Close TRF node
-        result += ')'
+        sg_out.append(')')
 
-        if dsc != '':
+        if len(dsc) != 0:
             # Close DSC node
-            result += ')'
-
-        return result
+            sg_out.append(')')
 
 
 def _serialize_slt(slt: Matrix4x4) -> str:
