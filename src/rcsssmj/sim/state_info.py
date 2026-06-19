@@ -66,7 +66,7 @@ class TransformNode:
         return False
 
     def reset(self):
-        self.children = []
+        self.children.clear()
 
 
 class SceneGraph(SimStateInformation):
