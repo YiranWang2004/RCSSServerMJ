@@ -178,7 +178,10 @@ class RemoteMonitor(RSMPMonitor):
             self._monitor_thread.join()
 
     def _emit_message(self, message: str) -> None:
-        self._conn.send_message(message.encode('utf-8'))
+        try:
+            self._conn.send_message(message.encode('utf-8'))
+        except BrokenPipeError:
+            self.shutdown()
 
     def run(self) -> None:
         """Continuously receive and process monitor commands.
