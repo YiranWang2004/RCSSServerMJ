@@ -144,7 +144,10 @@ class RemoteAgent(Generic[S], ABC):
 
         # print(f'Sending perception to agent "{self._team_name} {self._player_no}": {msg}')
 
-        self._conn.send_message(msg)
+        try:
+            self._conn.send_message(msg)
+        except BrokenPipeError:
+            self.shutdown()
 
     def run(self) -> None:
         """Continuously receive and process agent actions.
