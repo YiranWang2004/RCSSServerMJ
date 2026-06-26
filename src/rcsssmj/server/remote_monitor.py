@@ -77,7 +77,70 @@ class SimMonitor(ABC):
         """
 
 
-class RemoteMonitor(SimMonitor):
+class RSMPMonitor(SimMonitor):
+    """Simulation monitor that emits RSMP."""
+
+    def __init__(self, update_interval: int = 1) -> None:
+        """Construct a new remote simulation monitor client.
+
+        Parameter
+        ---------
+        update_interval: int
+            The update interval of the monitor.
+        """
+
+        super().__init__(update_interval=update_interval)
+
+        self._last_full_state_frame_id: int = -250
+        """The frame id when a full state was sent last."""
+
+        self._node_cache: TransformNode = TransformNode()
+        """The transform node cache."""
+
+        self._last_recompilation: int = -1
+        """The frame number of the last model recompilation."""
+
+        self._did_recompile: bool = False
+        """If the model was recompiled since the last update."""
+
+    def update(self, state_info: Sequence[SimStateInformation], frame_id: int, last_recompilation: int) -> None:
+        self._did_recompile |= last_recompilation != self._last_recompilation
+        self._last_recompilation = last_recompilation
+        if frame_id % self.update_interval != 0:
+            return
+
+        full = self._did_recompile or not (0 <= frame_id - self._last_full_state_frame_id < 250)
+        if full:
+            self._node_cache.reset()
+
+        # RSMP: Robot Simulation Monitor Protocol
+        # Major and minor version number of the protocol follows.
+        # The sub components are versioned separately.
+        # If just the inner structure of a sub component changed, the RSMP version number does not need to change.
+        msg = "((RSMP 1 0)"
+        for si in state_info:
+            if isinstance(si, SceneGraph):
+                msg += si.to_sexp(full, node_cache=self._node_cache)
+            else:
+                msg += si.to_sexp(full)
+        msg += ")"
+        self._emit_message(msg)
+        if full:
+            self._last_full_state_frame_id = frame_id
+        self._did_recompile = False
+
+    @abstractmethod
+    def _emit_message(self, message: str) -> None:
+        """Emit an RSMP message.
+
+        Parameter
+        ---------
+        message: str
+            The RSMP message to emit.
+        """
+
+
+class RemoteMonitor(RSMPMonitor):
     """Remote simulation monitor, utilizing a message based connection to communicate with an external monitor process."""
 
     def __init__(self, conn: PConnection, parser: CommandParser, update_interval: int = 1) -> None:
@@ -106,50 +169,16 @@ class RemoteMonitor(SimMonitor):
         self._monitor_thread: Thread | None = None
         """The thread, running the monitor receive loop (if existing)."""
 
-        self._last_full_state_frame_id: int = -250
-        """The frame id when a full state was sent last."""
-
-        self._node_cache: TransformNode = TransformNode()
-        """The transform node cache."""
-
-        self._last_recompilation: int = -1
-        """The frame number of the last model recompilation."""
-
-        self._did_recompile: bool = False
-        """If the model was recompiled since the last update."""
-
     def shutdown(self) -> None:
+        super().shutdown()
         self._conn.shutdown()
 
     def join(self) -> None:
         if self._monitor_thread is not None:
             self._monitor_thread.join()
 
-    def update(self, state_info: Sequence[SimStateInformation], frame_id: int, last_recompilation: int) -> None:
-        self._did_recompile |= last_recompilation != self._last_recompilation
-        self._last_recompilation = last_recompilation
-        if frame_id % self.update_interval != 0:
-            return
-
-        full = self._did_recompile or not (0 <= frame_id - self._last_full_state_frame_id < 250)
-        if full:
-            self._node_cache.reset()
-
-        # RSMP: Robot Simulation Monitor Protocol
-        # Major and minor version number of the protocol follows.
-        # The sub components are versioned separately.
-        # If just the inner structure of a sub component changed, the RSMP version number does not need to change.
-        msg = "((RSMP 1 0)"
-        for si in state_info:
-            if isinstance(si, SceneGraph):
-                msg += si.to_sexp(full, node_cache=self._node_cache)
-            else:
-                msg += si.to_sexp(full)
-        msg += ")"
-        self._conn.send_message(msg.encode('utf-8'))
-        if full:
-            self._last_full_state_frame_id = frame_id
-        self._did_recompile = False
+    def _emit_message(self, message: str) -> None:
+        self._conn.send_message(message.encode('utf-8'))
 
     def run(self) -> None:
         """Continuously receive and process monitor commands.
