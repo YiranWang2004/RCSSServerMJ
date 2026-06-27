@@ -456,19 +456,19 @@ class SoccerReferee:
                 if self._ground_time[a_id] > goalie_ground_max:
                     self._penalize(agent)
                     self._ground_time[a_id] = 0.0
-                    self._log_foul(agent, Foul.INCAPABLE)
+                    self._log_foul(a_id, Foul.INCAPABLE)
                 elif self._not_standing_time[a_id] > goalie_not_standing_max:
                     self._penalize(agent)
                     self._not_standing_time[a_id] = 0.0
-                    self._log_foul(agent, Foul.INCAPABLE)
+                    self._log_foul(a_id, Foul.INCAPABLE)
             elif self._ground_time[a_id] > ground_max:
                 self._penalize(agent)
                 self._ground_time[a_id] = 0.0
-                self._log_foul(agent, Foul.INCAPABLE)
+                self._log_foul(a_id, Foul.INCAPABLE)
             elif self._not_standing_time[a_id] > not_standing_max:
                 self._penalize(agent)
                 self._not_standing_time[a_id] = 0.0
-                self._log_foul(agent, Foul.INCAPABLE)
+                self._log_foul(a_id, Foul.INCAPABLE)
 
     def _check_illegal_defense(self) -> None:
         """Penalize the last player to enter its own goalie area when more than the allowed number are inside."""
