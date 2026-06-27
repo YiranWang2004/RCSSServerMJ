@@ -122,6 +122,6 @@ class SoccerGameInformation(SimStateInformation):
             gi.append(f'(team_left {self.left_team})(team_right {self.right_team})')
         for agent, fouls in self.fouls.items():
             for foul in fouls:
-                gi.append(f'(foul {foul} {agent.team_id} {agent.player_no})')
+                gi.append(f'(foul {foul} {agent.team_id + 1} {agent.player_no})')
         gi.append(')')
         return ''.join(gi)
