@@ -635,6 +635,7 @@ class SoccerSimulation(BaseSimulation):
                 right_score=self.game_state.get_team_score(TeamSide.RIGHT),
                 play_time=self.game_state.play_time,
                 play_mode=self.game_state.play_mode,
+                fouls=self.referee.fouls,
             ),
         )
 

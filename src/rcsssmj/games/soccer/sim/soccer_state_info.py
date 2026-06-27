@@ -1,8 +1,10 @@
 from typing import Final
 
 from rcsssmj.games.soccer.play_mode import PlayMode
+from rcsssmj.games.soccer.sim.soccer_referee import Foul
 from rcsssmj.games.soccer.soccer_fields import SoccerField
 from rcsssmj.games.soccer.soccer_rules import SoccerRules
+from rcsssmj.sim.agent_id import AgentID
 from rcsssmj.sim.state_info import SimStateInformation
 
 
@@ -55,6 +57,7 @@ class SoccerGameInformation(SimStateInformation):
         right_score: int,
         play_time: float,
         play_mode: PlayMode,
+        fouls: dict[AgentID, list[Foul]],
     ):
         """Construct a new soccer game state information.
 
@@ -80,6 +83,9 @@ class SoccerGameInformation(SimStateInformation):
 
         play_mode: PlayMode
             The current play mode.
+
+        fouls: dict[AgentID, list[Foul]]
+            The fouls given in this cycle.
         """
 
         super().__init__('soccer-game')
@@ -105,5 +111,15 @@ class SoccerGameInformation(SimStateInformation):
         self.play_mode: Final[PlayMode] = play_mode
         """The current play mode."""
 
+        self.fouls: Final[dict[AgentID, list[Foul]]] = fouls
+        """The current play mode."""
+
     def to_sexp(self, full: bool) -> str:
-        return f'((gs 1 0)(time {self.play_time})(team_left {self.left_team})(team_right {self.right_team})(half {2 if self.play_time > self.rules.half_time else 1})(score_left {self.left_score})(score_right {self.right_score})(play_mode {[pm for pm in PlayMode].index(self.play_mode)}))'
+        gi = [f'((gs 1 0)(time {self.play_time})(half {2 if self.play_time > self.rules.half_time else 1})(score_left {self.left_score})(score_right {self.right_score})(play_mode {[pm for pm in PlayMode].index(self.play_mode)})']
+        if full:
+            gi.append(f'(team_left {self.left_team})(team_right {self.right_team})')
+        for agent, fouls in self.fouls.items():
+            for foul in fouls:
+                gi.append(f'(foul {foul} {agent.team_id} {agent.player_no})')
+        gi.append(')')
+        return ''.join(gi)
