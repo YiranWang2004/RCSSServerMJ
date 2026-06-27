@@ -92,6 +92,9 @@ class SceneGraph(SimStateInformation):
         self.descriptions: dict[str, list[list[str]]] = descriptions
         """The descriptions to add for the given body names."""
 
+        self._cached_sexp: str | None = None
+        """The cached S-Expression (if to_sexp was already called)."""
+
     def _get_sim_agent(self, id: AgentID) -> SimAgent | None:
         """Get a SimAgent for a given prefixed name."""
         for agent in self.sim_agents:
@@ -99,7 +102,10 @@ class SceneGraph(SimStateInformation):
                 return agent
         return None
 
-    def to_sexp(self, full: bool, node_cache: TransformNode=TransformNode()) -> str:
+    def to_sexp(self, full: bool, node_cache: TransformNode=TransformNode(), allow_cached: bool=False) -> str:
+        if allow_cached and self._cached_sexp is not None:
+            return self._cached_sexp
+
         sg = ['((sg 1 0)']
         if full:
             sg.append('full')
@@ -111,7 +117,8 @@ class SceneGraph(SimStateInformation):
 
         sg.append(')')
 
-        return ''.join(sg)
+        self._cached_sexp = ''.join(sg)
+        return self._cached_sexp
 
     def _serialize_body(self, sg_out: list[str], body_id: int, parent_tmat: Matrix4x4, parent_is_agent: bool, update: bool, cached_node: TransformNode):
         """Returns the serialized value of the given body."""

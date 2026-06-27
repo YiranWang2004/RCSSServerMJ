@@ -80,7 +80,7 @@ class SimMonitor(ABC):
 class RSMPMonitor(SimMonitor):
     """Simulation monitor that emits RSMP."""
 
-    def __init__(self, update_interval: int = 1) -> None:
+    def __init__(self) -> None:
         """Construct a new remote simulation monitor client.
 
         Parameter
@@ -89,10 +89,7 @@ class RSMPMonitor(SimMonitor):
             The update interval of the monitor.
         """
 
-        super().__init__(update_interval=update_interval)
-
-        self._last_full_state_frame_id: int = -250
-        """The frame id when a full state was sent last."""
+        super().__init__(update_interval=2)
 
         self._node_cache: TransformNode = TransformNode()
         """The transform node cache."""
@@ -103,14 +100,30 @@ class RSMPMonitor(SimMonitor):
         self._did_recompile: bool = False
         """If the model was recompiled since the last update."""
 
+        self._need_full_state: bool = True
+        """If a full state update is required."""
+
+        self._allow_cached_scene_graph: bool = False
+        """If using a cached scene graph is allowed."""
+
     def update(self, state_info: Sequence[SimStateInformation], frame_id: int, last_recompilation: int) -> None:
         self._did_recompile |= last_recompilation != self._last_recompilation
         self._last_recompilation = last_recompilation
+        if self._did_recompile:
+            self._need_full_state = True
+
+        if frame_id % 250 == 0:
+            self._need_full_state = True
+            # Allow using the cached scene graph from now on.
+            # In this frame, every monitor will emit a frame and thus the diff is also always the same.
+            # This only works if the update_interval is the same for each RSMPMonitor.
+            # Otherwise, we cannot use the caching mechanism.
+            self._allow_cached_scene_graph = True
+
         if frame_id % self.update_interval != 0:
             return
 
-        full = self._did_recompile or not (0 <= frame_id - self._last_full_state_frame_id < 250)
-        if full:
+        if self._need_full_state:
             self._node_cache.reset()
 
         # RSMP: Robot Simulation Monitor Protocol
@@ -120,13 +133,12 @@ class RSMPMonitor(SimMonitor):
         msg = "((RSMP 1 0)"
         for si in state_info:
             if isinstance(si, SceneGraph):
-                msg += si.to_sexp(full, node_cache=self._node_cache)
+                msg += si.to_sexp(self._need_full_state, node_cache=self._node_cache, allow_cached=self._allow_cached_scene_graph)
             else:
-                msg += si.to_sexp(full)
+                msg += si.to_sexp(self._need_full_state)
         msg += ")"
         self._emit_message(msg)
-        if full:
-            self._last_full_state_frame_id = frame_id
+        self._need_full_state = False
         self._did_recompile = False
 
     @abstractmethod
@@ -143,7 +155,7 @@ class RSMPMonitor(SimMonitor):
 class RemoteMonitor(RSMPMonitor):
     """Remote simulation monitor, utilizing a message based connection to communicate with an external monitor process."""
 
-    def __init__(self, conn: PConnection, parser: CommandParser, update_interval: int = 1) -> None:
+    def __init__(self, conn: PConnection, parser: CommandParser) -> None:
         """Construct a new remote simulation monitor client.
 
         Parameter
@@ -153,12 +165,9 @@ class RemoteMonitor(RSMPMonitor):
 
         parser: CommandParser
             The monitor command parser instance.
-
-        update_interval: int
-            The update interval of the monitor.
         """
 
-        super().__init__(update_interval=update_interval)
+        super().__init__()
 
         self._conn: PConnection = conn
         """The monitor connection for exchanging state and command messages."""

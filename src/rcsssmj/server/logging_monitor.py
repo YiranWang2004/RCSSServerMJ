@@ -6,19 +6,16 @@ from rcsssmj.server.remote_monitor import RSMPMonitor
 class LoggingMonitor(RSMPMonitor):
     """Logging monitor that writes RSMP messages to a file."""
 
-    def __init__(self, file: TextIOWrapper, update_interval: int = 1) -> None:
+    def __init__(self, file: TextIOWrapper) -> None:
         """Construct a new logging monitor client.
 
         Parameter
         ---------
         file: TextIOWrapper
             The log file.
-
-        update_interval: int
-            The update interval of the monitor.
         """
 
-        super().__init__(update_interval=update_interval)
+        super().__init__()
 
         self._file: TextIOWrapper = file
         """The log file."""

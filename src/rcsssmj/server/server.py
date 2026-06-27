@@ -244,7 +244,7 @@ class SimServer(Generic[S]):
         if self.log_file:
             file = open(self.log_file, "a")
             with self._mutex:
-                self._monitors.append(LoggingMonitor(file, 2))
+                self._monitors.append(LoggingMonitor(file))
 
         # run simulation update loop
         if self.sequential_mode:
