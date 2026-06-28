@@ -28,7 +28,6 @@ from rcsssmj.sim.sim_agent import SimAgent
 from rcsssmj.sim.sim_object import SimObject
 from rcsssmj.sim.state_info import GlobalTime, SceneGraph, SimStateInformation
 
-
 if TYPE_CHECKING:
     from rcsssmj.sim.audio_data import AudioData
 

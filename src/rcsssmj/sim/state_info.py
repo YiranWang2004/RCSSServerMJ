@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Any, Final, Sequence
+from collections.abc import Sequence
+from typing import Any, Final
+
 import mujoco
 import numpy as np
 
-from rcsssmj.sim.agent_id import strip_agent_prefix, AgentID
+from rcsssmj.sim.agent_id import AgentID, strip_agent_prefix
 from rcsssmj.sim.sim_agent import SimAgent
 from rcsssmj.utils.geometry import Matrix4x4, matrix_4x4_mul, matrix_4x4_transpose, to_transformation_matrix, transformation_matrix_inverse
 
@@ -50,7 +52,7 @@ class GlobalTime(SimStateInformation):
 
 
 class TransformNode:
-    def __init__(self):
+    def __init__(self) -> None:
         self.children = []
         self.slt = tuple([0] * 16)
 
@@ -65,7 +67,7 @@ class TransformNode:
                 return True
         return False
 
-    def reset(self):
+    def reset(self) -> None:
         self.children.clear()
 
 
@@ -95,10 +97,10 @@ class SceneGraph(SimStateInformation):
         self._cached_sexp: str | None = None
         """The cached S-Expression (if to_sexp was already called)."""
 
-    def _get_sim_agent(self, id: AgentID) -> SimAgent | None:
+    def _get_sim_agent(self, aid: AgentID) -> SimAgent | None:
         """Get a SimAgent for a given prefixed name."""
         for agent in self.sim_agents:
-            if agent.agent_id == id:
+            if agent.agent_id == aid:
                 return agent
         return None
 
@@ -120,7 +122,7 @@ class SceneGraph(SimStateInformation):
         self._cached_sexp = ''.join(sg)
         return self._cached_sexp
 
-    def _serialize_body(self, sg_out: list[str], body_id: int, parent_tmat: Matrix4x4, parent_is_agent: bool, update: bool, cached_node: TransformNode):
+    def _serialize_body(self, sg_out: list[str], body_id: int, parent_tmat: Matrix4x4, parent_is_agent: bool, update: bool, cached_node: TransformNode) -> None:
         """Returns the serialized value of the given body."""
 
         body = self.mj_model.body(body_id)
@@ -210,11 +212,11 @@ class SceneGraph(SimStateInformation):
                 case mujoco.mjtGeom.mjGEOM_SPHERE:
                     load_node = '(load StdUnitSphere)'
                     size = self.mj_model.geom_size[geom_id][0]
-                    scale = [size, size, size]
+                    scale = (size, size, size)
                 case mujoco.mjtGeom.mjGEOM_CYLINDER:
                     load_node = '(load StdUnitCylinder)'
                     size = self.mj_model.geom_size[geom_id]
-                    scale = [size[0], size[0], size[1] * 2]
+                    scale = (size[0], size[0], size[1] * 2)
 
             need_geom_transform = not (np.array_equal(geom_pos, [0, 0, 0]) and np.array_equal(geom_quat, [1, 0, 0, 0]))
             if need_geom_transform:

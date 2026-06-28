@@ -1,5 +1,5 @@
-from enum import IntEnum
 import logging
+from enum import IntEnum
 from itertools import chain
 from math import pi, sqrt
 from typing import TYPE_CHECKING, cast
