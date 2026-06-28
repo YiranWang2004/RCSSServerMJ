@@ -48,6 +48,7 @@ def soccer_sim() -> None:
     parser.add_argument('--sync',       help='Run synchronous with agent clients.', default=False,       action='store_true')
     parser.add_argument('--realtime',   help='Run in real-time mode.',              default=True,        action=argparse.BooleanOptionalAction)
     parser.add_argument('--render',     help='Start internal monitor viewer.',      default=True,        action=argparse.BooleanOptionalAction)
+    parser.add_argument('--logfile',    help='Log game to a file.',                 default=None,        nargs='?', const='rcssservermj_monitor.log')
 
     # simulator / game arguments
     parser.add_argument('--field',       help='The soccer field version.',                                                                type=str, choices=field_versions)
@@ -83,6 +84,7 @@ def soccer_sim() -> None:
         sync_mode=args.sync,
         real_time=args.realtime,
         render=args.render,
+        log_file=args.logfile,
     )
 
     # register SIGINT handler

@@ -21,6 +21,7 @@ MUJOCO_LOG.TXT
 
 # logfiles
 console.log
+rcssservermj_monitor.log
 
 # dev environment configs
 .idea/

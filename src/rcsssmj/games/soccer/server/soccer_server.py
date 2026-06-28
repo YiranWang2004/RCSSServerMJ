@@ -25,6 +25,7 @@ class SoccerSimServer(SimServer[SoccerSimulation]):
         agent_port: int = 60000,
         monitor_port: int = 60001,
         *,
+        log_file: str | None = None,
         sequential_mode: bool = False,
         sync_mode: bool = False,
         real_time: bool = True,
@@ -46,6 +47,9 @@ class SoccerSimServer(SimServer[SoccerSimulation]):
         monitor_port: int, default=60001
             The port on which to listen for incoming TCP monitor connections.
 
+        log_file: str | None, default=None
+            The path to the log file (if a log file should be created).
+
         sequential_mode: bool, default=False
             Flag for selecting sequential or parallel simulation update loop.
 
@@ -63,6 +67,7 @@ class SoccerSimServer(SimServer[SoccerSimulation]):
 
         super().__init__(
             sim=sim,
+            log_file=log_file,
             sequential_mode=sequential_mode,
             sync_mode=sync_mode,
             real_time=real_time,

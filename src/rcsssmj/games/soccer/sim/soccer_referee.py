@@ -1,3 +1,4 @@
+from enum import IntEnum
 import logging
 from itertools import chain
 from math import pi, sqrt
@@ -20,6 +21,22 @@ _ILLEGAL_DEFENSE_MAX_PLAYERS = 2
 _ILLEGAL_DEFENSE_DEBOUNCE_STEPS = 5
 
 
+class Foul(IntEnum):
+    """A foul type."""
+
+    CROWDING = 0
+    TOUCHING = 1
+    ILLEGAL_DEFENCE= 2
+    ILLEGAL_ATTACK = 3
+    INCAPABLE = 4
+    KICK_OFF = 5
+    CHARGING = 6
+    SELF_COLLISION = 7
+    BALL_HOLDING = 8
+    DOUBLE_TOUCH = 9
+    HAND_FOUL = 10
+
+
 class SoccerReferee:
     """A referee, applying soccer game rules."""
 
@@ -38,6 +55,9 @@ class SoccerReferee:
 
         self._did_act: bool = False
         """Flag if the referee has already taken a decision in this referee cycle."""
+
+        self._fouls: dict[AgentID, list[Foul]] = {}
+        """The fouls given in the current cycle."""
 
         self.agent_na_touch_ball: AgentID | None = None
         """The ID of the agent not allowed to touch the ball a second time (if existing)."""
@@ -66,11 +86,18 @@ class SoccerReferee:
         self._illegal_defense_violation_steps: dict[str, int] = {'left': 0, 'right': 0}
         """Consecutive steps where more than the allowed number of own-team players are in the goalie area."""
 
+    @property
+    def fouls(self) -> dict[AgentID, list[Foul]]:
+        """The fouls given in the current cycle."""
+
+        return self._fouls
+
     def reset(self) -> None:
         """Reinitialize the referee."""
 
         # init referee state
         self._did_act = False
+        self._fouls.clear()
         self._ground_time.clear()
         self._not_standing_time.clear()
         self._standing_time.clear()
@@ -301,8 +328,26 @@ class SoccerReferee:
 
         self.game.game_state.set_play_mode(PlayMode.PLAY_ON)
 
+    def _log_foul(self, agent: AgentID, foul: Foul) -> None:
+        """Logs a foul to the internal list of fouls for this cycle.
+
+        Parameter
+        ---------
+        agent: AgentID
+            The agent the foul was given to.
+        foul: Foul
+            The foul type that was given.
+        """
+
+        if agent in self._fouls:
+            self._fouls[agent].append(foul)
+        else:
+            self._fouls[agent] = [foul]
+
     def referee(self) -> None:
         """Referee the current game situation."""
+
+        self._fouls.clear()
 
         # update game state times
         self.game.game_state.update(self.game.sim_time, progress_play_time=self.game.game_state.play_mode not in (PlayMode.BEFORE_KICK_OFF, PlayMode.GAME_OVER))
@@ -348,12 +393,14 @@ class SoccerReferee:
 
         # check hand touch foul
         if active_ball_contact is not None and self.__check_hand_foul():
+            self._log_foul(active_ball_contact, Foul.HAND_FOUL)
             self.direct_free_kick(TeamSide.get_opposing_side(active_ball_contact.team_id))
 
         # check double-touch rule
         if self.agent_na_touch_ball is not None and active_ball_contact is not None and last_ball_contact is not None:
             if self.agent_na_touch_ball == last_ball_contact and self.agent_na_touch_ball == active_ball_contact:
                 if last_ball_contact_change is not None and sim_time - last_ball_contact_change > 1:
+                    self._log_foul(active_ball_contact, Foul.DOUBLE_TOUCH)
                     self.free_kick(TeamSide.get_opposing_side(self.agent_na_touch_ball.team_id))
                     return
             else:
@@ -409,15 +456,19 @@ class SoccerReferee:
                 if self._ground_time[a_id] > goalie_ground_max:
                     self._penalize(agent)
                     self._ground_time[a_id] = 0.0
+                    self._log_foul(a_id, Foul.INCAPABLE)
                 elif self._not_standing_time[a_id] > goalie_not_standing_max:
                     self._penalize(agent)
                     self._not_standing_time[a_id] = 0.0
+                    self._log_foul(a_id, Foul.INCAPABLE)
             elif self._ground_time[a_id] > ground_max:
                 self._penalize(agent)
                 self._ground_time[a_id] = 0.0
+                self._log_foul(a_id, Foul.INCAPABLE)
             elif self._not_standing_time[a_id] > not_standing_max:
                 self._penalize(agent)
                 self._not_standing_time[a_id] = 0.0
+                self._log_foul(a_id, Foul.INCAPABLE)
 
     def _check_illegal_defense(self) -> None:
         """Penalize the last player to enter its own goalie area when more than the allowed number are inside."""
@@ -456,6 +507,7 @@ class SoccerReferee:
                     del entry_times[last_entrant.agent_id]
                     self._illegal_defense_violation_steps[side] = 0
                     self._penalize(last_entrant)
+                    self._log_foul(last_entrant.agent_id, Foul.ILLEGAL_DEFENCE)
             else:
                 self._illegal_defense_violation_steps[side] = 0
 
@@ -903,6 +955,8 @@ class KickChallengeReferee(SoccerReferee):
         self._start_time = -1
 
     def referee(self) -> None:
+        self._fouls.clear()
+
         # check if an agent is connected
         if self._start_time < 0 and len(self.game.get_players(TeamSide.LEFT)) > 0:
             self._start_time = self.game.game_state.sim_time + 2
@@ -925,6 +979,7 @@ class KickChallengeReferee(SoccerReferee):
 
         # check double-touch rule
         if self.game.ball.active_contact is not None and self.game.ball.active_contact == self.game.ball.last_contact:
+            self._log_foul(self.game.ball.active_contact, Foul.DOUBLE_TOUCH)
             self.game_over()
 
     def _check_location_triggers(self) -> None:

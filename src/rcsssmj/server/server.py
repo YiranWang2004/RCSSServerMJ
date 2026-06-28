@@ -6,6 +6,7 @@ from threading import Lock, Thread
 from typing import TYPE_CHECKING, Final, Generic, Protocol, TypeVar
 
 from rcsssmj.monitor.mujoco_monitor import MujocoMonitor
+from rcsssmj.server.logging_monitor import LoggingMonitor
 from rcsssmj.server.remote_agent import RemoteAgent, RemoteAgentState
 from rcsssmj.server.remote_monitor import RemoteMonitor, RemoteMonitorState, SimMonitor
 from rcsssmj.sim.commands import MonitorCommand
@@ -55,6 +56,7 @@ class SimServer(Generic[S]):
         self,
         sim: S,
         *,
+        log_file: str | None = None,
         sequential_mode: bool = False,
         sync_mode: bool = False,
         real_time: bool = True,
@@ -66,6 +68,9 @@ class SimServer(Generic[S]):
         ---------
         sim: S
             The simulation to run.
+
+        log_file: str | None, default=None
+            The path to the log file (if a log file should be created).
 
         sequential_mode: bool, default=False
             Flag for selecting sequential or parallel simulation update loop.
@@ -84,6 +89,9 @@ class SimServer(Generic[S]):
 
         self.sim: Final[S] = sim
         """The simulation to run."""
+
+        self.log_file: Final[str | None] = log_file
+        """Path to the log file if a log file shall be created."""
 
         self.sequential_mode: Final[bool] = sequential_mode
         """Flag for enabling / disabling sequential mode."""
@@ -231,6 +239,12 @@ class SimServer(Generic[S]):
         if self.render:
             with self._mutex:
                 self._monitors.append(MujocoMonitor(self.sim.mj_model, 2))
+
+        # create log file
+        if self.log_file:
+            file = open(self.log_file, "a")
+            with self._mutex:
+                self._monitors.append(LoggingMonitor(file))
 
         # run simulation update loop
         if self.sequential_mode:
@@ -537,7 +551,7 @@ class SimServer(Generic[S]):
         state_info = self.sim.generate_state_information()
 
         for monitor in monitors:
-            monitor.update(state_info, self.sim.frame_id)
+            monitor.update(state_info, self.sim.frame_id, self.sim.last_recompilation)
 
     def _remove_monitors(self, monitors: Sequence[SimMonitor]) -> None:
         """Remove the given monitors from the simulation.
