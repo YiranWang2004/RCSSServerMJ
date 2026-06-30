@@ -210,7 +210,7 @@ class MujocoMonitor(SimMonitor):
             mins = int(self.game_state.play_time // 60)
             secs = int(self.game_state.play_time % 60)
             time_text = f'{mins:02d}:{secs:02d}'[:max_time_str_len]
-            play_mode_text = f'Playmode: {self.game_state.play_mode}'
+            play_mode_text = f'Playmode: {self.game_state.play_mode.value}'
 
             # fmt: off
             char_w    = 16
