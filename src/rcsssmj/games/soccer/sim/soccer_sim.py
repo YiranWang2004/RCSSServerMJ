@@ -42,6 +42,7 @@ class SoccerSimulation(BaseSimulation):
         *,
         initial_game_phase: GamePhase = GamePhase.FIRST_HALF,
         initial_play_time: float | None = None,
+        initial_score: tuple[int, int] = (0, 0),
     ) -> None:
         """Construct a new simulation sever.
 
@@ -61,6 +62,9 @@ class SoccerSimulation(BaseSimulation):
 
         initial_play_time: float | None, default=None
             The initial play time or ``None`` for game phase related start time.
+
+        initial_score: tuple[int, int], default=(0, 0)
+            The initial score.
         """
 
         super().__init__(vision_interval=2)
@@ -77,7 +81,7 @@ class SoccerSimulation(BaseSimulation):
         # determine initial play time
         play_time = initial_play_time if initial_play_time is not None else self.rules.get_start_time_for(initial_game_phase)
 
-        self.game_state: Final[GameState] = GameState(initial_game_phase, play_time)
+        self.game_state: Final[GameState] = GameState(initial_game_phase, play_time, initial_score)
         """The current soccer game state."""
 
         self.ball: Final[SoccerBall] = SoccerBall()

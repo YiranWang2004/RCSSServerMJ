@@ -55,6 +55,8 @@ def soccer_sim() -> None:
     parser.add_argument('--rules',       help='The soccer rule book.',                                default=SoccerRuleBooks.SSIM.value, type=str, choices=rule_books)
     parser.add_argument('--phase',       help='The game phase (0=first  half, 1=second half, etc.).', default=0,                          type=int, choices=game_phases)
     parser.add_argument('--time',        help='The initial play time in seconds.',                                                        type=float)
+    parser.add_argument('--score-left',  help='The initial score for the left team.',                 default=0,                          type=int)
+    parser.add_argument('--score-right', help='The initial score for the right team.',                default=0,                          type=int)
     # fmt: on
 
     args = parser.parse_args()
@@ -72,6 +74,7 @@ def soccer_sim() -> None:
         referee=referee,
         initial_game_phase=initial_game_phase,
         initial_play_time=args.time,
+        initial_score=(args.score_left, args.score_right),
     )
 
     # create server

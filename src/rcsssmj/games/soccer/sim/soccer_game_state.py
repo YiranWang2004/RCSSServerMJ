@@ -10,6 +10,7 @@ class GameState:
         self,
         phase: GamePhase = GamePhase.FIRST_HALF,
         play_time: float = 0.0,
+        score: tuple[int, int] = (0, 0),
         *,
         sim_time: float = 0.0,
     ) -> None:
@@ -22,6 +23,9 @@ class GameState:
 
         play_time: float, default=0.0
             The initial play time in seconds.
+
+        score: tuple[int, int], default=(0, 0)
+            The initial score.
 
         sim_time: float
             The initial simulation time in seconds.
@@ -51,16 +55,17 @@ class GameState:
         self._right_team_name: str | None = None
         """The name of the right team or ``None`` in case no second team connected, yet."""
 
-        self.left_team_score: int = 0
+        self.left_team_score: int = score[0]
         """The current score of the left team."""
 
-        self.right_team_score: int = 0
+        self.right_team_score: int = score[1]
         """The current score of the right team."""
 
     def reset(
         self,
         phase: GamePhase = GamePhase.FIRST_HALF,
         play_time: float = 0.0,
+        score: tuple[int, int] = (0, 0),
     ) -> None:
         """Reinitialize game state.
 
@@ -71,6 +76,9 @@ class GameState:
 
         play_time: float, default=0.0
             The initial play time in seconds.
+
+        score: tuple[int, int], default=(0, 0)
+            The initial score.
         """
 
         self._phase = phase
@@ -83,8 +91,8 @@ class GameState:
         self._left_team_name = None
         self._right_team_name = None
 
-        self.left_team_score = 0
-        self.right_team_score = 0
+        self.left_team_score = score[0]
+        self.right_team_score = score[1]
 
         self.agent_na_touch_ball = None
         self.team_na_score = None
