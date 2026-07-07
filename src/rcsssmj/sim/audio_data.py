@@ -46,5 +46,5 @@ class AudioData:
         self.volumes: NDArray[np.float64] = np.zeros(0, dtype=np.float64)
         """The volumes at which audio messages are transmitted measured at 1 meter distance."""
 
-        self.origins: NDArray[np.float64] = np.zeros((0, 3), dtype=np.float64)
+        self.origins: NDArray[np.float64] = np.zeros((3, 0), dtype=np.float64)
         """The audio signal origins."""
