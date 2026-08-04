@@ -394,6 +394,8 @@ class SoccerReferee:
         # check hand touch foul
         if active_ball_contact is not None and self.__check_hand_foul():
             self._log_foul(active_ball_contact, Foul.HAND_FOUL)
+            agent = self.game.get_players(active_ball_contact.team_id)[active_ball_contact.player_no]
+            self._penalize(agent)
             self.direct_free_kick(TeamSide.get_opposing_side(active_ball_contact.team_id))
 
         # check double-touch rule
@@ -884,7 +886,7 @@ class SoccerReferee:
                 self._penalize(agent)
 
     def _check_placement_for_free_kick_left(self) -> None:
-        """Penalize all players of the right team that are within the center circle radius to the ball."""
+        """Relocate all players of the right team that are within the center circle radius to the ball."""
 
         ball_x = self.game.ball.xpos[0]
         ball_y = self.game.ball.xpos[1]
@@ -892,10 +894,10 @@ class SoccerReferee:
 
         for agent in self.game.right_players.values():
             if sqrt((agent.xpos[0] - ball_x) ** 2 + (agent.xpos[1] - ball_y) ** 2) < cc_radius:
-                self._penalize(agent)
+                self._move_outside_circle(agent)
 
     def _check_placement_for_free_kick_right(self) -> None:
-        """Penalize all players of the left team that are within the center circle radius to the ball."""
+        """Relocate all players of the left team that are within the center circle radius to the ball."""
 
         ball_x = self.game.ball.xpos[0]
         ball_y = self.game.ball.xpos[1]
@@ -903,7 +905,52 @@ class SoccerReferee:
 
         for agent in self.game.left_players.values():
             if sqrt((agent.xpos[0] - ball_x) ** 2 + (agent.xpos[1] - ball_y) ** 2) < cc_radius:
-                self._penalize(agent)
+                self._move_outside_circle(agent)
+
+    def _move_outside_circle(self, player: SoccerAgent) -> None:
+        """Move a player just outside the center circle radius relative to the ball."""
+        ball_x = self.game.ball.xpos[0]
+        ball_y = self.game.ball.xpos[1]
+        cc_radius = self.game.field.center_circle_radius + 0.2  # 0.2m margin
+
+        dx = player.xpos[0] - ball_x
+        dy = player.xpos[1] - ball_y
+        dist = sqrt(dx**2 + dy**2)
+
+        if dist == 0:
+            dx = 1.0
+            dy = 0.0
+            dist = 1.0
+
+        x = ball_x + (dx / dist) * cc_radius
+        y = ball_y + (dy / dist) * cc_radius
+
+        # Check for free space to avoid collisions
+        is_occupied = True
+        angle_offset = 0.0
+        base_angle = np.arctan2(dy, dx)
+
+        while is_occupied and angle_offset < 2 * pi:
+            is_occupied = False
+            for agent in chain(self.game.left_players.values(), self.game.right_players.values()):
+                if agent != player and (agent.xpos[0] - x) ** 2 + (agent.xpos[1] - y) ** 2 < 1.0:
+                    is_occupied = True
+                    break
+
+            if is_occupied:
+                angle_offset += 0.2
+                x = ball_x + np.cos(base_angle + angle_offset) * cc_radius
+                y = ball_y + np.sin(base_angle + angle_offset) * cc_radius
+
+        # Ensure the player remains inside the field boundaries
+        max_x = self.game.field.field_dim[0] / 2
+        max_y = self.game.field.field_dim[1] / 2
+        x = max(min(x, max_x), -max_x)
+        y = max(min(y, max_y), -max_y)
+
+        # Face the ball
+        rot = np.arctan2(ball_y - y, ball_x - x)
+        player.drop_at(x, y, rot)
 
     def _penalize(self, player: SoccerAgent) -> None:
         """Penalize the given player."""
