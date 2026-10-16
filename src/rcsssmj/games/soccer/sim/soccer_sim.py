@@ -43,6 +43,7 @@ class SoccerSimulation(BaseSimulation):
         initial_game_phase: GamePhase = GamePhase.FIRST_HALF,
         initial_play_time: float | None = None,
         initial_score: tuple[int, int] = (0, 0),
+        bhuman_physics: bool = False,
     ) -> None:
         """Construct a new simulation sever.
 
@@ -67,7 +68,8 @@ class SoccerSimulation(BaseSimulation):
             The initial score.
         """
 
-        super().__init__(vision_interval=2)
+        super().__init__(vision_interval=2, n_substeps=10 if bhuman_physics else 4)
+        self.bhuman_physics = bhuman_physics
 
         self.field: Final[SoccerField] = field
         """The soccer field specification."""
@@ -145,6 +147,15 @@ class SoccerSimulation(BaseSimulation):
         world_spec = self.spec_provider.load_environment_spec('soccer', 'world')
         if world_spec is None:
             return None
+
+        if self.bhuman_physics:
+            world_spec.option.timestep = .002
+            world_spec.option.integrator = mujoco.mjtIntegrator.mjINT_EULER
+            world_spec.option.iterations = 50
+            world_spec.option.tolerance = 1e-6
+            world_spec.option.solver = mujoco.mjtSolver.mjSOL_NEWTON
+            world_spec.option.density = 0
+            world_spec.option.viscosity = 0
 
         # manipulate world to match field description
         def add_marker(name: str, x: float, y: float, z: float) -> Any:

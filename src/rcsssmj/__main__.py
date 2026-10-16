@@ -59,6 +59,8 @@ def soccer_sim() -> None:
     parser.add_argument('--score-right', help='The initial score for the right team.',                default=0,                          type=int)
     # fmt: on
 
+    parser.add_argument("--bhuman-physics", action="store_true", help="Use native B-Human SimRobot 2 ms physics and 20 ms agent frames.")
+
     args = parser.parse_args()
 
     # simulation parameter
@@ -75,6 +77,7 @@ def soccer_sim() -> None:
         initial_game_phase=initial_game_phase,
         initial_play_time=args.time,
         initial_score=(args.score_left, args.score_right),
+        bhuman_physics=args.bhuman_physics,
     )
 
     # create server
