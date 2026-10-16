@@ -14,6 +14,7 @@ class GameStatePerception(Perception):
         team_right: str | None,
         score_left: int,
         score_right: int,
+        phase: int = 0,
     ) -> None:
         """Construct a new game state perception.
 
@@ -39,6 +40,7 @@ class GameStatePerception(Perception):
         """
 
         super().__init__('GS')
+        self.phase = phase
 
         self.play_time: Final[float] = play_time
         """The current play time."""
@@ -67,4 +69,4 @@ class GameStatePerception(Perception):
         left_team_expr = '' if self.team_left is None else '(tl ' + self.team_left + ')'
         right_team_expr = '' if self.team_right is None else '(tr ' + self.team_right + ')'
 
-        return f'(GS (t {self.play_time})(pm {self.play_mode}){left_team_expr}{right_team_expr}(sl {self.score_left})(sr {self.score_right}))'
+        return f'(GS (t {self.play_time})(pm {self.play_mode}){left_team_expr}{right_team_expr}(sl {self.score_left})(sr {self.score_right})(ph {self.phase}))'

@@ -437,6 +437,7 @@ class BaseSimulation(ABC):
             joint_names: list[str] = []
             joint_axs: list[float] = []
             joint_vxs: list[float] = []
+            joint_taus: list[float] = []
             agent_perceptions: list[Perception] = [sim_time_perception, game_state_perception]
 
             prefix_length = len(agent.agent_id.prefix)
@@ -448,6 +449,9 @@ class BaseSimulation(ABC):
                 if sensor_spec.type == mujoco.mjtSensor.mjSENS_JOINTPOS:
                     joint_names.append(sensor_name)
                     joint_axs.append(sensor.data[0])
+                    joint_id = int(self._mj_model.sensor(sensor_spec.name).objid[0])
+                    dof_id = int(self._mj_model.jnt_dofadr[joint_id])
+                    joint_taus.append(float(self._mj_data.qfrc_actuator[dof_id]))
 
                 elif sensor_spec.type == mujoco.mjtSensor.mjSENS_JOINTVEL:
                     joint_vxs.append(sensor.data[0])
@@ -480,7 +484,7 @@ class BaseSimulation(ABC):
 
             # joint state perception
             if joint_names:
-                agent_perceptions.append(JointStatePerception(joint_names, trunc2_vec(np.degrees(joint_axs)), trunc2_vec(np.degrees(joint_vxs))))
+                agent_perceptions.append(JointStatePerception(joint_names, trunc2_vec(np.degrees(joint_axs)), trunc2_vec(np.degrees(joint_vxs)), trunc3_vec(np.asarray(joint_taus))))
 
             # audio perception
             a_sensor = self._a_data.sensors.get(agent.agent_id.prefix + 'hear', None)

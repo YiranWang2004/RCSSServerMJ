@@ -144,7 +144,7 @@ class OrientationPerception(Perception):
 class JointStatePerception(Perception):
     """Sequence of joint perceptions."""
 
-    def __init__(self, joint_names: Sequence[str], axs: Sequence[float], vxs: Sequence[float]) -> None:
+    def __init__(self, joint_names: Sequence[str], axs: Sequence[float], vxs: Sequence[float], taus: Sequence[float] | None = None) -> None:
         """Construct a new joint state perception.
 
         Parameter
@@ -157,6 +157,9 @@ class JointStatePerception(Perception):
 
         vxs: Sequence[float]
             The list of joint velocities.
+
+        taus: Sequence[float] | None, default=None
+            Actual generalized actuator torques in Nm, in joint_names order.
         """
 
         super().__init__('JS')
@@ -170,13 +173,25 @@ class JointStatePerception(Perception):
         self.joint_vxs: Final[Sequence[float]] = vxs
         """The list of joint velocities."""
 
+        self.joint_taus: Final[Sequence[float] | None] = taus
+        """Actual generalized actuator torques in Nm, in joint_names order.
+
+        Optional extension: legacy consumers may ignore the tau HJ child.
+        These are MuJoCo qfrc_actuator readings, not requested PD torques.
+        """
+
     def to_sexp(self) -> str:
         """Return an symbolic expression representing this perception.
 
-        Expression format: (HJ (n <name>) (ax <ax>), (vx <vx>))*
+        Expression format: (HJ (n <name>) (ax <ax>) (vx <vx>) [(tau <Nm>)])*
         """
 
-        return ''.join(f'(HJ (n {name})(ax {ax})(vx {vx}))' for name, ax, vx in zip(self.joint_names, self.joint_axs, self.joint_vxs, strict=False))
+        return ''.join(
+            f'(HJ (n {name})(ax {ax})(vx {vx})'
+            + (f'(tau {self.joint_taus[index]})' if self.joint_taus is not None else '')
+            + ')'
+            for index, (name, ax, vx) in enumerate(zip(self.joint_names, self.joint_axs, self.joint_vxs, strict=False))
+        )
 
     def to_sexp2(self) -> str:
         """Return an symbolic expression representing this perception.
@@ -188,7 +203,8 @@ class JointStatePerception(Perception):
         axs = ' '.join(str(ax) for ax in self.joint_axs)
         vxs = ' '.join(str(vx) for vx in self.joint_vxs)
 
-        return f'({self.name} (names {names}) (axs {axs}) (vxs {vxs}))'
+        taus = '' if self.joint_taus is None else ' (taus ' + ' '.join(str(tau) for tau in self.joint_taus) + ')'
+        return f'({self.name} (names {names}) (axs {axs}) (vxs {vxs}){taus})'
 
 
 class GyroPerception(Perception):

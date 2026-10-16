@@ -625,6 +625,7 @@ class SoccerSimulation(BaseSimulation):
             team_right=self.game_state.get_team_name(TeamSide.RIGHT),
             score_left=self.game_state.get_team_score(TeamSide.LEFT),
             score_right=self.game_state.get_team_score(TeamSide.RIGHT),
+            phase=self.game_state.phase.value,
         )
 
     def generate_state_information(self) -> list[SimStateInformation]:
