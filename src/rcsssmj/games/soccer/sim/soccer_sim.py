@@ -496,6 +496,16 @@ class SoccerSimulation(BaseSimulation):
         root_body.pos[0] = x_sign * (2 * agent_id.player_no + 1)
         root_body.pos[1] = (self.field.field_dim[1] / 2) + self.field.field_border
         root_body.quat[0:4] = quat_from_axis_angle((0, 0, 1), -pi / 2)
+        if params.model_name in {'K1BHuman', 'T1BHuman'} and 1 <= params.player_no <= 7:
+            # Direct in-field placement replaces the physical walk-in flow.
+            # Both rosters start outside the centre circle, so either team
+            # can be selected for kickoff without a placement foul.
+            positions = [(-25, 0), (-18, 6), (-18, -6), (-11, 11), (-10, 0), (-11, -11), (-6, 0)]
+            own_x, own_y = positions[params.player_no - 1]
+            side = 1 if team_id == TeamSide.LEFT.value else -1
+            root_body.pos[0] = side * own_x * self.field.field_dim[0] / 55
+            root_body.pos[1] = side * own_y * self.field.field_dim[1] / 36
+            root_body.quat[0:4] = quat_from_axis_angle((0, 0, 1), 0 if side == 1 else pi)
 
         logger.debug('Spawn team #%d player #%02d @ (%.3f %.3f)', agent_id.team_id, agent_id.player_no, root_body.pos[0], root_body.pos[1])
 

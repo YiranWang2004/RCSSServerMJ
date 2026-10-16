@@ -112,7 +112,13 @@ class SimAgent(SimObject):
 
         # ensure position value for each joint
         if pos is None:
-            pos = np.zeros(n_joints)
+            if self.spec.modelname in {'K1BHuman', 'T1BHuman'}:
+                # SimRobot 2026 starts hinges at their Deflection init/ref,
+                # including the folded elbows. Other models keep zero reset.
+                pos = np.array([joint.ref for joint in self.spec.joints
+                                if joint.type in {mjtJoint.mjJNT_HINGE, mjtJoint.mjJNT_SLIDE}])
+            else:
+                pos = np.zeros(n_joints)
         elif len(pos) < n_joints:
             pos = np.pad(pos, (0, n_joints < len(pos)))
 
