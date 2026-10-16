@@ -553,7 +553,18 @@ class BaseSimulation(ABC):
                     # check object coordinates for horizontal and vertical view range
                     half_horizontal_range = 60
                     half_vertical_range = 60
+                    # Imported native robot camera: exact model-specific half-FOV.
+                    camera_spec = agent.spec.site(agent.agent_id.prefix + "camera")
+                    if len(camera_spec.userdata) >= 2:
+                        half_horizontal_range, half_vertical_range = list(camera_spec.userdata)[:2]
                     obj_visibility = (azimuths >= -half_horizontal_range) & (azimuths <= half_horizontal_range) & (elevations >= -half_vertical_range) & (elevations <= half_vertical_range)
+                    if len(camera_spec.userdata) >= 2:
+                        # Native camera is rectangular in image coordinates,
+                        # so use the forward component for both pinhole limits.
+                        forward = local_obj_pos[0]
+                        obj_visibility = ((forward > 0)
+                                          & (np.abs(local_obj_pos[1]) <= forward * np.tan(np.radians(half_horizontal_range)))
+                                          & (np.abs(local_obj_pos[2]) <= forward * np.tan(np.radians(half_vertical_range))))
 
                     # extract simple world object detections
                     obj_detections: list[PObjectDetection] = [ObjectDetection(obj_markers[i][1], azimuths[i], elevations[i], distances[i]) for i in range(n_world_markers) if obj_visibility[i]]

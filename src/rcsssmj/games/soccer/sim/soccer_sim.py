@@ -174,7 +174,7 @@ class SoccerSimulation(BaseSimulation):
         goal_z = self.field.goal_dim[2]
 
         goalie_area_x = field_half_x - self.field.goalie_area_dim[0]
-        goalie_area_half_y = self.field.goalie_area_dim[1]
+        goalie_area_half_y = self.field.goalie_area_dim[1] / 2
 
         # resize field
         pitch_geom = world_spec.geom('pitch')
@@ -406,7 +406,7 @@ class SoccerSimulation(BaseSimulation):
         # penalty area markers
         if self.field.penalty_area_dim is not None:
             pen_area_x = field_half_x - self.field.penalty_area_dim[0]
-            pen_area_half_y = self.field.penalty_area_dim[1]
+            pen_area_half_y = self.field.penalty_area_dim[1] / 2
 
             add_marker('l_lupa', -pen_area_x,  pen_area_half_y, 0)  # L-junction: left upper penalty area
             add_marker('l_llpa', -pen_area_x, -pen_area_half_y, 0)  # L-junction: left lower penalty area
