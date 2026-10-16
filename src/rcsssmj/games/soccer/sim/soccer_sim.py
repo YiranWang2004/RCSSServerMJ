@@ -15,7 +15,7 @@ from rcsssmj.games.soccer.sim.soccer_game_state import GameState
 from rcsssmj.games.soccer.sim.soccer_perceptions import GameStatePerception
 from rcsssmj.games.soccer.sim.soccer_referee import SoccerReferee
 from rcsssmj.games.soccer.sim.soccer_state_info import SoccerEnvironmentInformation, SoccerGameInformation
-from rcsssmj.games.soccer.soccer_fields import SoccerField
+from rcsssmj.games.soccer.soccer_fields import FIFA7vs7SoccerField, SoccerField
 from rcsssmj.games.soccer.soccer_rules import FIFASoccerRules, SoccerRules
 from rcsssmj.games.teams import TeamSide
 from rcsssmj.sim.agent_id import AgentID
@@ -154,6 +154,32 @@ class SoccerSimulation(BaseSimulation):
             world_spec.option.iterations = 50
             world_spec.option.tolerance = 1e-6
             world_spec.option.solver = mujoco.mjtSolver.mjSOL_NEWTON
+            world_spec.option.density = 0
+            world_spec.option.viscosity = 0
+
+        if isinstance(self.field, FIFA7vs7SoccerField):
+            # SimRobot T1: BallFifa5.rsi3 and Geometry.cpp material mapping.
+            # Correct SphereMass's 0.011 m typo to the collision radius 0.11 m:
+            # MuJoCo computes I = 2/5 * 0.43 * 0.11^2 = 0.0020812 kg m^2.
+            # Apply to the shared world, independent of team or robot model.
+            ball_geom = world_spec.geom('ball')
+            ball_geom.size = [.11, 0, 0]
+            ball_geom.mass = .43
+            ball_geom.friction = [.5, .007, .007]
+            ball_geom.condim = 6
+            ball_geom.priority = 1
+            ball_geom.solref = [.02, 1]
+            ball_geom.solimp = [.9, .95, .001, .5, 2]
+
+            # A flat plane has the same local contact surface as SimRobot's
+            # floor box. Preserve the server's field borders and out rules.
+            ground_geom = world_spec.geom('pitch')
+            ground_geom.friction = [1, 0, 0]
+            ground_geom.condim = 3
+            ground_geom.priority = 0
+            ground_geom.solref = [.02, 1]
+            ground_geom.solimp = [.9, .95, .001, .5, 2]
+            world_spec.option.gravity = [0, 0, -9.80665]
             world_spec.option.density = 0
             world_spec.option.viscosity = 0
 
