@@ -1,3 +1,5 @@
+> **B-Human K1/T1 / 7v7 专用分支：** 中文启动、人数设置、键盘操作及原版模型说明见 [README_7v7.zh-CN.md](README_7v7.zh-CN.md)。
+
 # RCSSServerMJ
 
 The RoboCup Soccer Simulation Server based on the MuJoCo physics engine.

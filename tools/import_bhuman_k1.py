@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Convert B-Human's K1.rsi3 to the server's MJCF / sensor naming scheme.
 
-Usage: python tools/import_bhuman_k1.py ../booster_mjlab/BHumanCodeRelease
+Usage: python tools/import_bhuman_k1.py ../BHumanCodeRelease
 Only robot assets change; field physics and client control parameters do not.
 """
 
