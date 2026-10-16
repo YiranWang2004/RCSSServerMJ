@@ -19,7 +19,7 @@ maintainers = [
     {name = "Stefan Glaser", email = "glaser.stefan@gmx.net"}
 ]
 license = "MIT"
-license-files = ["LICENSE", "src/rcsssmj/resources/robots/*/LICENSE", "AUTHORS.md"]
+license-files = ["LICENSE", "src/rcsssmj/resources/robots/*/LICENSE*", "AUTHORS.md"]
 classifiers = [
   # How mature is this project? Common values are
   #   3 - Alpha
