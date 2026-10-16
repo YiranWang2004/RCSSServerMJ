@@ -74,7 +74,7 @@ class SimAction(ABC, Generic[SAI]):
 class MotorAction(SimAction[PSimActionInterface]):
     """Class for representing a motor action."""
 
-    def __init__(self, actuator_name: str, q: float, dq: float, kp: float, kd: float, tau: float):
+    def __init__(self, actuator_name: str, q: float, dq: float, kp: float, kd: float, tau: float, max_torque: float | None = None):
         """Construct a new motor action.
 
         Parameter
@@ -96,6 +96,10 @@ class MotorAction(SimAction[PSimActionInterface]):
 
         tau : float
             The torque of the actuator.
+
+        max_torque : float | None, default=None
+            Optional summed torque limit in Nm for imported SimRobot motors.
+            Omission keeps the current limit; ordinary server motors ignore it.
         """
 
         super().__init__(actuator_name)
@@ -112,11 +116,16 @@ class MotorAction(SimAction[PSimActionInterface]):
         self.kd: Final[float] = kd
         """The derivative gain of the actuator."""
 
+        self.max_torque: Final[float | None] = max_torque
+
         self.tau: Final[float] = tau
         """The extra torque of the actuator."""
 
     def perform(self, ai: PSimActionInterface) -> None:
-        ai.ctrl_motor(self.actuator_name, self.q, self.dq, self.kp, self.kd, self.tau)
+        if self.max_torque is None:
+            ai.ctrl_motor(self.actuator_name, self.q, self.dq, self.kp, self.kd, self.tau)
+        else:
+            ai.ctrl_motor(self.actuator_name, self.q, self.dq, self.kp, self.kd, self.tau, self.max_torque)
 
 
 class SpeakerAction(SimAction[PSimActionInterface]):

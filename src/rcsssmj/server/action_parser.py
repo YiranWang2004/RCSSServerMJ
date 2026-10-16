@@ -91,8 +91,8 @@ class DefaultActionParser(ActionParser[SAI]):
             except binascii.Error:
                 return None
 
-        if n_elements == 6:
-            # joint action: (<name> <q> <dq> <kp> <kd> <tau>)
+        if n_elements in (6, 7):
+            # joint action: (<name> <q> <dq> <kp> <kd> <tau> [maxTorque])
             return MotorAction(
                 model_prefix + node.get_str(0),
                 radians(node.get_float(1)),
@@ -100,6 +100,7 @@ class DefaultActionParser(ActionParser[SAI]):
                 node.get_float(3),
                 node.get_float(4),
                 node.get_float(5),
+                node.get_float(6) if n_elements == 7 else None,
             )
 
         logger.debug('Unknown action node: %s', node)

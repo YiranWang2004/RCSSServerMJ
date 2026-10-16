@@ -24,6 +24,7 @@ from rcsssmj.sim.perceptions import (
     TouchPerception,
     VisionPerception,
 )
+from rcsssmj.sim.simrobot_motors import SimRobotMotors
 from rcsssmj.sim.sim_agent import SimAgent
 from rcsssmj.sim.sim_object import SimObject
 from rcsssmj.sim.state_info import GlobalTime, SceneGraph, SimStateInformation
@@ -66,6 +67,8 @@ class BaseSimulation(ABC):
 
         self.vision_interval: Final[int] = vision_interval
         """The interval (in simulation cycles) in which the vision perception is generated."""
+
+        self._simrobot_motors = SimRobotMotors()
 
         self._frame_id: int = 0
         """The current simulation frame number."""
@@ -159,6 +162,7 @@ class BaseSimulation(ABC):
         kp: float,
         kd: float,
         tau: float,
+        max_torque: float | None = None,
     ) -> None:
         """Command a motor movement, which produces a torque on the actuator via a PD controller:
 
@@ -184,6 +188,9 @@ class BaseSimulation(ABC):
         tau : float
             The torque of the actuator.
         """
+
+        if self._simrobot_motors.command(name, q, dq, kp, kd, tau, max_torque):
+            return
 
         actuator_tau_model = self.mj_model.actuator(name + '_tau')
         actuator_tau_data = self.mj_data.actuator(name + '_tau')
@@ -260,6 +267,7 @@ class BaseSimulation(ABC):
     def shutdown(self) -> None:
         """Shutdown simulation."""
 
+        self._simrobot_motors = SimRobotMotors()
         self._mj_spec = None
         self._mj_model = None
         self._mj_data = None
@@ -302,6 +310,7 @@ class BaseSimulation(ABC):
         del_els(agent.spec.sites)
         del_els(agent.spec.texts)
         del_els(agent.spec.textures)
+        del_els(agent.spec.numerics)
 
     def _recompile(self) -> None:
         """Recompile spec and bind sim objects."""
@@ -309,8 +318,13 @@ class BaseSimulation(ABC):
         # remember recompilation frame id
         self._last_recompilation = self._frame_id
 
+        previous_controls = {self._mj_model.actuator(index).name: float(self._mj_data.ctrl[index]) for index in range(self._mj_model.nu)}
+
         # recompile spec
         self._mj_model, self._mj_data = self._mj_spec.recompile(self._mj_model, self._mj_data)
+        for index in range(self._mj_model.nu):
+            self._mj_data.ctrl[index] = previous_controls.get(self._mj_model.actuator(index).name, 0.0)
+        self._simrobot_motors.bind(self._mj_model, self._mj_data)
 
         # calculate forward kinematics / dynamics
         mujoco.mj_forward(self._mj_model, self._mj_data)
@@ -352,7 +366,12 @@ class BaseSimulation(ABC):
         self._pre_step()
 
         # progress simulation
-        mujoco.mj_step(self._mj_model, self._mj_data, self.n_substeps)
+        if self._simrobot_motors.indices:
+            for _ in range(self.n_substeps):
+                self._simrobot_motors.apply(self._mj_data)
+                mujoco.mj_step(self._mj_model, self._mj_data)
+        else:
+            mujoco.mj_step(self._mj_model, self._mj_data, self.n_substeps)
 
         # progress audio simulation
         a_step(self._a_data, self._mj_data)

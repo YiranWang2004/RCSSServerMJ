@@ -13,6 +13,7 @@ class PSimActionInterface(Protocol):
         kp: float,
         kd: float,
         tau: float,
+        max_torque: float | None = None,
     ) -> None:
         """Command a motor movement, which produces a torque on the actuator via a PD controller:
 
@@ -37,6 +38,10 @@ class PSimActionInterface(Protocol):
 
         tau : float
             The torque of the actuator.
+
+        max_torque : float | None, default=None
+            Optional summed torque limit in Nm for imported SimRobot motors.
+            Omission keeps the current limit; ordinary server motors ignore it.
         """
 
     def say_message(
